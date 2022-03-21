@@ -42,14 +42,14 @@ logger = logging.getLogger(__name__)
 
 def assign_n_tasks(topic, username):
     res = questions.find({'topic':topic, "assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}})
-    print(res)
     # res = collection.findMany({"assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}})
+    counter = 0
     for i in res:
         element_id = i['_id']
         task = i['original']
-        print(task)
         questions.update_one({'_id':element_id},{'$push':{"assigned_to":username}})
-    return 'Assigned %s to %s' % (topic, username)
+        counter+=1
+    return 'Assigned %s from %s to %s' % (counter, topic, username)
 
 
 def user_stats(username):
@@ -88,18 +88,13 @@ def start(update: Update, context: CallbackContext):
 def reply(update: Update, context: CallbackContext):
     print('hello')
     command = update.message.text
-    print(command)
     pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
-    print(pattern_matcher)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
         topic = pattern[0]
-        print(topic)
-        username = pattern[1]
-        print(username)
+        username = pattern[2]
         res = assign_n_tasks(topic, username)
-        print(res)
         update.message.reply_text(res)
 
     pattern_matcher = re.findall('[Ss]tats [A-z_]+', command)
