@@ -88,7 +88,8 @@ def start(update: Update, context: CallbackContext):
 def reply(update: Update, context: CallbackContext):
     print('hello')
     command = update.message.text
-    pattern_matcher = re.findall('[A-z_]+ to [A-z_]+', command)
+    print(command)
+    pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
     print(pattern_matcher)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
