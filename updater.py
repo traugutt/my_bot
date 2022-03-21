@@ -1,16 +1,19 @@
 from pymongo import MongoClient
 import sys
+import subprocess
 
+csv_file = sys.argv[1]
+print(csv_file)
+
+subprocess.run('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file '+ csv_file +' --headerline')
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
 questions = db['bot_data']
-topic = 'maxim_11_01_22'
-username = 'Maxon_Stenduper'
-limit = 40
+topic = csv_file.split('.csv')[0]
+print(topic)
 res = questions.find({'topic':topic})
-#res = questions.find({'topic':topic, "assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}}, limit=limit)
-# res = collection.findMany({"assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}})
+
 for i in res:
     element_id = i['_id']
-    questions.update_one({'_id':element_id},{"$set":{"assigned_to":['traugutt'], "completed_by":[], "case_sensitive":False}})
+    questions.update_one({'_id':element_id},{"$set":{"assigned_to":[], "completed_by":[], "case_sensitive":False}})
