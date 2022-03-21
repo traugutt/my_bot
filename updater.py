@@ -1,11 +1,11 @@
 from pymongo import MongoClient
 import sys
-import subprocess
+import os
 
 csv_file = sys.argv[1]
 print(csv_file)
 
-subprocess.run('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file '+ csv_file +' --headerline')
+os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file '+ csv_file +' --headerline')
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
