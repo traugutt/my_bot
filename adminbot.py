@@ -40,8 +40,8 @@ logger = logging.getLogger(__name__)
 
 #conversations = {}
 
-def assign_n_tasks(limit, topic, username):
-    res = questions.find({'topic':topic, "assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}}, limit=limit)
+def assign_n_tasks(topic, username):
+    res = questions.find({'topic':topic, "assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}})
     print(res)
     # res = collection.findMany({"assigned_to":{"$nin":[username]},"completed_by":{"$nin":[username]}})
     for i in res:
@@ -49,7 +49,7 @@ def assign_n_tasks(limit, topic, username):
         task = i['original']
         print(task)
         questions.update_one({'_id':element_id},{'$push':{"assigned_to":username}})
-    return 'Assigned %s tasks from %s to %s' % (str(limit), topic, username)
+    return 'Assigned %s to %s' % (topic, username)
 
 
 def user_stats(username):
@@ -73,6 +73,9 @@ def user_stats(username):
         result+=topic_stat
     return result
 
+def insert_questions(questions):
+    pass
+
 
 
 def start(update: Update, context: CallbackContext):
@@ -85,15 +88,16 @@ def start(update: Update, context: CallbackContext):
 def reply(update: Update, context: CallbackContext):
     print('hello')
     command = update.message.text
-    pattern_matcher = re.findall('[Aa]ssign [0-9]+ tasks from [A-z_]+ to [A-z_]+', command)
+    pattern_matcher = re.findall('[A-z_]+ to [A-z_]+', command)
     print(pattern_matcher)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
-        num_of_tasks = int(pattern[1])
-        topic = pattern[4]
-        username = pattern[6]
-        res = assign_n_tasks(num_of_tasks, topic, username)
+        topic = pattern[0]
+        print(topic)
+        username = pattern[1]
+        print(username)
+        res = assign_n_tasks(topic, username)
         print(res)
         update.message.reply_text(res)
 
@@ -104,6 +108,15 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[1]
         res = user_stats(username)
         update.message.reply_text(res)
+
+
+    # pattern_matcher = re.findall('[Ss]tats [A-z_]+', command)
+    # if len(pattern_matcher) >= 1:
+    #     pattern = pattern_matcher[0]
+    #     pattern = pattern.split(' ')
+    #     username = pattern[1]
+    #     res = user_stats(username)
+    #     update.message.reply_text(res)
 
 
 def help_command(update: Update, context):
