@@ -73,8 +73,13 @@ def user_stats(username):
         result+=topic_stat
     return result
 
-def insert_questions(questions):
-    pass
+def remove_tasks(questions):
+    res = questions.find({'topic':topic, "assigned_to":{"$in":[username]},"completed_by":{"$nin":[username]}})
+    for i in res:
+        element_id = i['_id']
+        task = i['original']
+        questions.update_one({'_id':element_id},{'$pull':{"assigned_to":username}})
+    return 'Removed %s from %s' % (topic, username)
 
 
 
@@ -106,13 +111,14 @@ def reply(update: Update, context: CallbackContext):
         update.message.reply_text(res)
 
 
-    # pattern_matcher = re.findall('[Ss]tats [A-z_]+', command)
-    # if len(pattern_matcher) >= 1:
-    #     pattern = pattern_matcher[0]
-    #     pattern = pattern.split(' ')
-    #     username = pattern[1]
-    #     res = user_stats(username)
-    #     update.message.reply_text(res)
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+ from [A-z_0-9]+', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[1]
+        username = pattern[1]
+        res = remove_tasks(topic, username)
+        update.message.reply_text(res)
 
 
 def help_command(update: Update, context):
