@@ -73,7 +73,7 @@ def user_stats(username):
         result+=topic_stat
     return result
 
-def remove_tasks(questions):
+def remove_tasks(topic, username):
     res = questions.find({'topic':topic, "assigned_to":{"$in":[username]},"completed_by":{"$nin":[username]}})
     for i in res:
         element_id = i['_id']
