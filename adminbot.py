@@ -116,7 +116,7 @@ def reply(update: Update, context: CallbackContext):
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
         topic = pattern[1]
-        username = pattern[1]
+        username = pattern[3]
         res = remove_tasks(topic, username)
         update.message.reply_text(res)
 
