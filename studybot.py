@@ -82,7 +82,7 @@ def reply(update: Update, context: CallbackContext):
         split_chars = list(previous_answer)
         for char in split_chars:
             if char == '’':
-                char == '\''
+                char = '\''
             res+=char
         previous_answer = res
     print(f'previous_answer: {previous_answer}')
