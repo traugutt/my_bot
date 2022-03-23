@@ -83,6 +83,7 @@ def reply(update: Update, context: CallbackContext):
                 char == '\''
             res+=char
         previous_answer = res
+        print(previous_answer)
 
     if previous_answer.lower() == 'y':
         print(previous_answer)
