@@ -47,7 +47,7 @@ def start(update: Update, context: CallbackContext):
     if total == 0:
         message_reply_text = 'There\'s no homework for you to do at the moment. Press /start to check for homework at a later time.'
     else:
-        message_reply_text = 'Welcome, you have ' + str(total) + ' questions left to answer. Ready to do your homework? Type in "begin" to proceed.'
+        message_reply_text = 'Welcome, you have ' + str(total) + ' questions left to answer. Ready to do your homework? Type in "Y or y" to proceed.'
     
     # keyboard = [
     # [
@@ -75,8 +75,16 @@ def reply(update: Update, context: CallbackContext):
     print(datetime.datetime.now())
     username = update.message.chat.username
     previous_answer = update.message.text
+    if '’' in previous_answer:
+        res = ''
+        split_chars = list(previous_answer)
+        for char in split_chars:
+            if char == '’':
+                char == '\''
+            res+=char
+    previous_answer = res
 
-    if previous_answer.lower() == 'begin':
+    if previous_answer.lower() == 'y':
         print(previous_answer)
 
         question = questions.find_one({"assigned_to":{"$in":[username]}, "completed_by":{"$nin":[username]}})
@@ -214,4 +222,5 @@ if __name__ == '__main__':
 
 # daemon = Daemonize(app="studybot", pid=pid, action=main)
 # daemon.start()
+
 
