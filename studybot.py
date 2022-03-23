@@ -67,6 +67,8 @@ def check_answer(correct_answer, provided_answer):
                 if provided_answer in correct_answer:
                     return True
             elif type(correct_answer) == str:
+                print(f'correct answer: {correct_answer}')
+                print(f'provided answer: {provided_answer}')
                 if provided_answer == correct_answer:
                     return True
 
@@ -83,7 +85,7 @@ def reply(update: Update, context: CallbackContext):
                 char == '\''
             res+=char
         previous_answer = res
-        print(previous_answer)
+    print(f'previous_answer: {previous_answer}')
 
     if previous_answer.lower() == 'y':
         print(previous_answer)
