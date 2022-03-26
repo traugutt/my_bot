@@ -124,7 +124,7 @@ def reply(update: Update, context: CallbackContext):
 
     pattern_matcher = re.findall('audio', command)
     if len(pattern_matcher) >= 1:
-        context.bot.send_audio('https://www.goethe-verlag.com/book2/_alleima/_mp3/ES/x01.mp3')
+        context.bot.send_audio(chat_id=update.effective_chat.id, audio='https://www.goethe-verlag.com/book2/_alleima/_mp3/ES/x01.mp3')
 
 def audio(update: Update, context: CallbackContext):
     context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('./001-poklon-razogrev.mp3', 'rb'))
