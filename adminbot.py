@@ -118,7 +118,6 @@ def reply(update: Update, context: CallbackContext):
         topic = pattern[1]
         username = pattern[3]
         res = remove_tasks(topic, username)
-        bot.send_audio(chat_id=chat_id, audio=open('tests/test.mp3', 'rb'))
         update.message.reply_text(res)
 
 
