@@ -118,8 +118,16 @@ def reply(update: Update, context: CallbackContext):
         topic = pattern[1]
         username = pattern[3]
         res = remove_tasks(topic, username)
+        bot.send_audio(chat_id=chat_id, audio=open('tests/test.mp3', 'rb'))
         update.message.reply_text(res)
 
+
+    pattern_matcher = re.findall('audio', command)
+    if len(pattern_matcher) >= 1:
+        context.bot.send_audio('https://www.goethe-verlag.com/book2/_alleima/_mp3/ES/x01.mp3')
+
+def audio(update: Update, context: CallbackContext):
+    context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('./001-poklon-razogrev.mp3', 'rb'))
 
 def help_command(update: Update, context):
     """Displays info on how to use the bot."""
@@ -138,6 +146,7 @@ def main() -> None:
     #updater.dispatcher.add_handler(CallbackQueryHandler(button))
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
+    updater.dispatcher.add_handler(CommandHandler('audio', audio))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
 
 
