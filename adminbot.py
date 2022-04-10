@@ -120,11 +120,6 @@ def reply(update: Update, context: CallbackContext):
         res = remove_tasks(topic, username)
         update.message.reply_text(res)
 
-
-    pattern_matcher = re.findall('audio', command)
-    if len(pattern_matcher) >= 1:
-        context.bot.send_audio(chat_id=update.effective_chat.id, audio='https://papago.naver.com/apis/tts/c_lt_kyuri_2.2.0_107-nvoice_kyuri_2.2.0_1d00c75f233fbda88e152d9ad01dec6f-1648472171415')
-
 def audio(update: Update, context: CallbackContext):
     context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('./001-poklon-razogrev.mp3', 'rb'))
 

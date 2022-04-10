@@ -16,6 +16,8 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Callback
 from telegram.ext import Updater, CommandHandler
 from telegram.ext import MessageHandler, Filters
 import datetime
+import os
+from navertts import NaverTTS
 
 # from homework_bot.__init__ import app
 # from mindmeld.components.dialogue import Conversation
@@ -72,6 +74,14 @@ def check_answer(correct_answer, provided_answer):
                 if provided_answer == correct_answer:
                     return True
 
+def create_tts(text, lang):
+
+    tts = NaverTTS(text, lang=lang)
+    text = text.replace(' ', '_')
+    mp3_title = text + '.mp3'
+    tts.save('bot_audio/' + mp3_title)
+    return mp3_title
+
 def reply(update: Update, context: CallbackContext):
 
     print(datetime.datetime.now())
@@ -103,6 +113,7 @@ def reply(update: Update, context: CallbackContext):
         correct_answer = question['original']
         element_id = question['_id']
         task_line = question['task']
+        topic = question['topic']
             
         #questions.update_one({'_id':element_id},{'$set': {"completed_by": username }})
         
@@ -113,11 +124,24 @@ def reply(update: Update, context: CallbackContext):
             answers.update_one({'question_id':element_id,'username':username},{'$set':{'time':datetime.datetime.utcnow()}})
         except TypeError:
             answers.insert_one({'question_id':element_id,'username':username,'correct_answer':correct_answer, 'time':datetime.datetime.utcnow(), 'number_of_tries':0, 'number_of_tries_historic':0, 'number_of_times_answered':0})
-        
-        update.message.reply_text(task_line)
-        update.message.reply_text(task_text)
+
+        try:
+            audio = question['audio']
+            if audio == 'yes':
+                lang = question['lang']
+                title = create_tts(correct_answer, lang)
+                update.message.reply_text(task_line)
+                update.message.reply_text(task_text)
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio='bot_audio/' + title, title='Play me!')
+                update.message.reply_text(task_text)
+            else:
+                update.message.reply_text(task_line)
+                update.message.reply_text(task_text)
+        except KeyError:
+            update.message.reply_text(task_text)
+            update.message.reply_text(task_line)
     else:
-        previous_questions_raw = answers.find({'username':username}).sort([('time', -1)])
+        previous_questions_raw = answers.find({'username': username}).sort([('time', -1)])
         previous_questions_sorted = []
 
         for i in previous_questions_raw:
