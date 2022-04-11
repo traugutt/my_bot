@@ -133,10 +133,7 @@ def reply(update: Update, context: CallbackContext):
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
                 audio_url = 'http://159.223.234.185:5000/' + title
-                print(audio_url)
-                context.bot.send_audio(chat_id=update.effective_chat.id,
-                                       audio='https://www.book2.nl/book2/EN/SOUND/0104.mp3')
-                context.bot.send_audio(chat_id=update.effective_chat.id, audio='http://159.223.234.185:5000/hello.mp3')
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('bot_audio/hello.mp3', 'rb'))
                 update.message.reply_text(task_text)
             else:
                 update.message.reply_text(task_line)
