@@ -132,6 +132,7 @@ def reply(update: Update, context: CallbackContext):
                 lang = question['lang']
                 title = create_tts(correct_answer, lang)
                 path_to_file = 'bot_audio/'+ title
+
                 mp3s = os.listdir('bot_audio/')
                 print(mp3s)
                 while title not in mp3s:
@@ -243,6 +244,7 @@ def main() -> None:
     #updater.dispatcher.add_handler(CallbackQueryHandler(button))
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
+    updater.dispatcher.add_error_handler('start')s
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
 
 
