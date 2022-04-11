@@ -132,7 +132,9 @@ def reply(update: Update, context: CallbackContext):
                 title = create_tts(correct_answer, lang)
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
-                context.bot.send_audio(chat_id=update.effective_chat.id, audio='http://159.223.234.185:5000/' + title, title='Play me!')
+                audio_url = 'http://159.223.234.185:5000/' + title
+                print(audio_url)
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio_url, title='Play me!')
                 update.message.reply_text(task_text)
             else:
                 update.message.reply_text(task_line)
