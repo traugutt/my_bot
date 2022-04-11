@@ -79,7 +79,7 @@ def create_tts(text, lang):
 
     tts = NaverTTS(text, lang=lang)
     text = uuid.uuid4()
-    mp3_title = text + '.mp3'
+    mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
     return mp3_title
 
