@@ -135,7 +135,7 @@ def reply(update: Update, context: CallbackContext):
                 audio_url = 'http://159.223.234.185:5000/' + title
                 print(audio_url)
                 audio_url.replace(/\n$/, "")
-                context.bot.send_audio(chat_id=update.effective_chat.id, audio='http://159.223.234.185:5000/the_first_24_hours_of_Tuesdays_are_the_worst.mp3?random=64', title='Play me!')
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio='http://159.223.234.185:5000/hello.mp3?random=64', title='Play me!')
                 update.message.reply_text(task_text)
             else:
                 update.message.reply_text(task_line)
