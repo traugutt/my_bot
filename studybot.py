@@ -132,13 +132,14 @@ def reply(update: Update, context: CallbackContext):
                 lang = question['lang']
                 title = create_tts(correct_answer, lang)
                 path_to_file = 'bot_audio/'+ title
-                update.message.reply_text(task_line)
                 mp3s = os.listdir('bot_audio/')
+                print(mp3s)
                 while title not in mp3s:
                     mp3s = os.listdir('bot_audio/')
+                    print('not yet')
                 else:
                     try:
-                        open(path_to_file)
+                        update.message.reply_text(task_line)
                         context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
                     except Exception as e:
                         if 'telegram.error.BadRequest' in str(e):
