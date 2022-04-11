@@ -125,9 +125,20 @@ def reply(update: Update, context: CallbackContext):
             answers.update_one({'question_id':element_id,'username':username},{'$set':{'time':datetime.datetime.utcnow()}})
         except TypeError:
             answers.insert_one({'question_id':element_id,'username':username,'correct_answer':correct_answer, 'time':datetime.datetime.utcnow(), 'number_of_tries':0, 'number_of_tries_historic':0, 'number_of_times_answered':0})
-
-        update.message.reply_text(task_text)
-        update.message.reply_text(task_line)
+        try:
+            audio = question['audio']
+            if audio == 'yes':
+                lang = question['lang']
+                title = create_tts(correct_answer, lang)
+                path_to_file = 'bot_audio/' + title
+                update.message.reply_text(task_line)
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+            else:
+                update.message.reply_text(task_line)
+                update.message.reply_text(task_text)
+        except KeyError:
+            update.message.reply_text(task_text)
+            update.message.reply_text(task_line)
 
     else:
         previous_questions_raw = answers.find({'username': username}).sort([('time', -1)])
