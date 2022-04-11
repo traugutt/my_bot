@@ -19,7 +19,7 @@ import datetime
 import os
 from navertts import NaverTTS
 import uuid
-
+import os
 # from homework_bot.__init__ import app
 # from mindmeld.components.dialogue import Conversation
 
@@ -81,7 +81,6 @@ def create_tts(text, lang):
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
-    time.sleep(1)
     return mp3_title
 
 def reply(update: Update, context: CallbackContext):
@@ -134,11 +133,16 @@ def reply(update: Update, context: CallbackContext):
                 title = create_tts(correct_answer, lang)
                 path_to_file = 'bot_audio/'+ title
                 update.message.reply_text(task_line)
-                try:
-                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
-                except Exception as e:
-                    if 'telegram.error.BadRequest' in str(e):
-                         context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                mp3s = os.listdir('bot_audio/')
+                while title not in mp3s:
+                    mp3s = os.listdir('bot_audio/')
+                else:
+                    try:
+                        open(path_to_file)
+                        context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                    except Exception as e:
+                        if 'telegram.error.BadRequest' in str(e):
+                             context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
             else:
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
