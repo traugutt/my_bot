@@ -80,11 +80,7 @@ def create_tts(text, lang):
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
-    mp3s = os.listdir('bot_audio/')
-    print(mp3s)
-    while mp3_title not in mp3s:
-        mp3s = os.listdir('bot_audio/')
-        print('not yet')
+    print('audio saved')
     return mp3_title
 
 def reply(update: Update, context: CallbackContext):
