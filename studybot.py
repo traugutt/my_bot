@@ -134,7 +134,11 @@ def reply(update: Update, context: CallbackContext):
                 title = create_tts(correct_answer, lang)
                 path_to_file = 'bot_audio/'+ title
                 update.message.reply_text(task_line)
-                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                try:
+                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                except Exception as e:
+                    if 'telegram.error.BadRequest' in str(e):
+                         context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
             else:
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
