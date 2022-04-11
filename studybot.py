@@ -237,7 +237,7 @@ def main() -> None:
     #updater.dispatcher.add_handler(CallbackQueryHandler(button))
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
-    updater.dispatcher.add_error_handler(reply)
+    updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
 
 
