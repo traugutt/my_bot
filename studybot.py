@@ -81,6 +81,7 @@ def create_tts(text, lang):
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
+    time.sleep(1)
     return mp3_title
 
 def reply(update: Update, context: CallbackContext):
@@ -131,10 +132,9 @@ def reply(update: Update, context: CallbackContext):
             if audio == 'yes':
                 lang = question['lang']
                 title = create_tts(correct_answer, lang)
-                time.sleep(1)
-                print(title)
+                path_to_file = 'bot_audio/'+ title
                 update.message.reply_text(task_line)
-                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('bot_audio/'+ title, 'rb'))
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
             else:
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
