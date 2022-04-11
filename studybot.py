@@ -18,6 +18,7 @@ from telegram.ext import MessageHandler, Filters
 import datetime
 import os
 from navertts import NaverTTS
+import uuid
 
 # from homework_bot.__init__ import app
 # from mindmeld.components.dialogue import Conversation
@@ -77,7 +78,7 @@ def check_answer(correct_answer, provided_answer):
 def create_tts(text, lang):
 
     tts = NaverTTS(text, lang=lang)
-    text = text.replace(' ', '_')
+    text = uuid.uuid4()
     mp3_title = text + '.mp3'
     tts.save('bot_audio/' + mp3_title)
     return mp3_title
