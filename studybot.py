@@ -120,6 +120,15 @@ def reply(update: Update, context: CallbackContext):
         
         is_answered = answers.find_one({'question_id':element_id, 'username':username})
 
+        try:
+            is_answered['number_of_tries']
+            answers.update_one({'question_id':element_id,'username':username},{'$set':{'time':datetime.datetime.utcnow()}})
+        except TypeError:
+            answers.insert_one({'question_id':element_id,'username':username,'correct_answer':correct_answer, 'time':datetime.datetime.utcnow(), 'number_of_tries':0, 'number_of_tries_historic':0, 'number_of_times_answered':0})
+
+        update.message.reply_text(task_text)
+        update.message.reply_text(task_line)
+
     else:
         previous_questions_raw = answers.find({'username': username}).sort([('time', -1)])
         previous_questions_sorted = []
@@ -165,16 +174,6 @@ def reply(update: Update, context: CallbackContext):
                 except TypeError:
                     answers.insert_one({'question_id':element_id,'username':username,'correct_answer':correct_answer, 'time':datetime.datetime.utcnow(), 'number_of_tries':0, 'number_of_tries_historic':0, 'number_of_times_answered':0})
                 try:
-                    is_answered['number_of_tries']
-                    answers.update_one({'question_id': element_id, 'username': username},
-                                       {'$set': {'time': datetime.datetime.utcnow()}})
-                except TypeError:
-                    answers.insert_one(
-                        {'question_id': element_id, 'username': username, 'correct_answer': correct_answer,
-                         'time': datetime.datetime.utcnow(), 'number_of_tries': 0, 'number_of_tries_historic': 0,
-                         'number_of_times_answered': 0})
-
-                try:
                     audio = question['audio']
                     if audio == 'yes':
                         lang = question['lang']
@@ -186,8 +185,8 @@ def reply(update: Update, context: CallbackContext):
                         update.message.reply_text(task_line)
                         update.message.reply_text(task_text)
                 except KeyError:
-                    update.message.reply_text(task_text)
                     update.message.reply_text(task_line)
+                    update.message.reply_text(task_text)
         else:
             num_of_tries = answers.find_one({'question_id':element_id, 'username':username})['number_of_tries']
             max_attempts = questions.find_one({'_id':element_id})['max_attempts']
