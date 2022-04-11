@@ -76,11 +76,15 @@ def check_answer(correct_answer, provided_answer):
                     return True
 
 def create_tts(text, lang):
-
     tts = NaverTTS(text, lang=lang)
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
+    mp3s = os.listdir('bot_audio/')
+    print(mp3s)
+    while mp3_title not in mp3s:
+        mp3s = os.listdir('bot_audio/')
+        print('not yet')
     return mp3_title
 
 def reply(update: Update, context: CallbackContext):
@@ -132,19 +136,8 @@ def reply(update: Update, context: CallbackContext):
                 lang = question['lang']
                 title = create_tts(correct_answer, lang)
                 path_to_file = 'bot_audio/'+ title
-
-                mp3s = os.listdir('bot_audio/')
-                print(mp3s)
-                while title not in mp3s:
-                    mp3s = os.listdir('bot_audio/')
-                    print('not yet')
-                else:
-                    try:
-                        update.message.reply_text(task_line)
-                        context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
-                    except Exception as e:
-                        if 'telegram.error.BadRequest' in str(e):
-                             context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                update.message.reply_text(task_line)
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
             else:
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
@@ -244,7 +237,7 @@ def main() -> None:
     #updater.dispatcher.add_handler(CallbackQueryHandler(button))
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
-    updater.dispatcher.add_error_handler('start')
+    updater.dispatcher.add_error_handler(reply)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
 
 
