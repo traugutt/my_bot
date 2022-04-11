@@ -131,6 +131,7 @@ def reply(update: Update, context: CallbackContext):
             if audio == 'yes':
                 lang = question['lang']
                 title = create_tts(correct_answer, lang)
+                time.sleep(1)
                 print(title)
                 update.message.reply_text(task_line)
                 context.bot.send_audio(chat_id=update.effective_chat.id, audio=open('bot_audio/'+ title, 'rb'))
