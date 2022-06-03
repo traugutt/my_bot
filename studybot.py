@@ -160,7 +160,7 @@ def reply(update: Update, context: CallbackContext):
         print(username)
         is_case_sensitive = questions.find_one({'_id':element_id})['case_sensitive']
 
-        if username in ['Maxon_Stenduper','traugutt']
+        if username in ['Maxon_Stenduper','traugutt']:
             previous_answer = previous_answer.lower()
             correct_previous = correct_previous.lower()
             if previous_answer[-1] == '.':
