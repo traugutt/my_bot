@@ -91,7 +91,7 @@ def start(update: Update, context: CallbackContext):
 
 
 def reply(update: Update, context: CallbackContext):
-    print('hello')
+    print('hiii')
     command = update.message.text
     print(command)
     print(update.message)
