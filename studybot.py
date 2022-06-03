@@ -133,6 +133,9 @@ def reply(update: Update, context: CallbackContext):
                 path_to_file = 'bot_audio/' + title
                 update.message.reply_text(task_line)
                 context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+            elif 'http' in audio:
+                update.message.reply_text(task_line)
+                context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
             else:
                 update.message.reply_text(task_line)
                 update.message.reply_text(task_text)
@@ -157,9 +160,19 @@ def reply(update: Update, context: CallbackContext):
         print(username)
         is_case_sensitive = questions.find_one({'_id':element_id})['case_sensitive']
 
+        if username == '@Maxon_Stenduper'
+            previous_answer = previous_answer.lower()
+            correct_previous = correct_previous.lower()
+            if previous_answer[-1] == '.':
+                previous_answer = previous_answer[:-1]
+            if correct_previous[-1] == '.':
+                correct_previous = correct_previous[:-1]
+
+        #disable case sensitive
         if is_case_sensitive == False:
             previous_answer = previous_answer.lower()
             correct_previous = correct_previous.lower()
+
 
         is_correct = check_answer(correct_previous,previous_answer)
 
