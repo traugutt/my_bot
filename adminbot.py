@@ -10,6 +10,7 @@ Basic example for a bot that uses inline keyboards. For an in-depth explanation,
 import logging
 import time
 import re
+import os
 # from daemonize import Daemonize
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, KeyboardButton, ReplyKeyboardMarkup
@@ -91,10 +92,42 @@ def start(update: Update, context: CallbackContext):
 
 
 def reply(update: Update, context: CallbackContext):
-    print('hiii')
     command = update.message.text
-    print(command)
-    print(update.message)
+
+    pattern_matcher = re.findall('db remove [a-z0-9_]', command)
+    if len(pattern_matcher) >= 1:
+        topic = pattern_matcher[0].split(' ')[2]
+        print(topic)
+        client = MongoClient('mongodb://localhost:27017/')
+        db = client.students
+        questions = db['bot_data']
+
+        res = questions.find({'topic': topic})
+
+        for i in res:
+            element_id = i['_id']
+            questions.update_one({'_id': element_id},
+                                 {"$set": {"assigned_to": [], "completed_by": [], "case_sensitive": False}})
+
+    pattern_matcher = re.findall('topic', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        tsv_to_csv = re.sub("\t", ",", pattern)
+        with open("new_task_set.csv", 'w') as csv_file:
+            csv_file.write(tsv_to_csv)
+        os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline')
+
+        update.message.reply_text('updated')
+
+    pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[0]
+        username = pattern[2]
+        res = assign_n_tasks(topic, username)
+        update.message.reply_text(res)
+
     pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
