@@ -105,7 +105,7 @@ def reply(update: Update, context: CallbackContext):
         db = client.students
         questions = db['bot_data']
 
-        questions.remove({'topic': topic})
+        questions.delete_many({'topic': topic})
         number_of_questions = questions.find({'topic': topic})
         if len(number_of_questions) == 0:
             update.message.reply_text(f'removed {topic} from db')
