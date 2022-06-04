@@ -99,7 +99,8 @@ def reply(update: Update, context: CallbackContext):
 
     pattern_matcher = re.findall('db remove [a-z0-9_]', command)
     if len(pattern_matcher) >= 1:
-        topic = pattern_matcher[0].split(' ')[2]
+        topic = pattern_matcher[0].split(' ')
+        topic = topic[2]
         print(topic)
         client = MongoClient('mongodb://localhost:27017/')
         db = client.students
