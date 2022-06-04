@@ -109,7 +109,7 @@ def reply(update: Update, context: CallbackContext):
             questions.update_one({'_id': element_id},
                                  {"$set": {"assigned_to": [], "completed_by": [], "case_sensitive": False}})
 
-    pattern_matcher = re.findall('topic\ttask', command)
+    pattern_matcher = re.findall('^topic\ttask', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         tsv_to_csv = re.sub("\t", ",", pattern)
