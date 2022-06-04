@@ -114,7 +114,7 @@ def reply(update: Update, context: CallbackContext):
     if len(pattern_matcher) >= 1:
         with open("new_task_set.csv", 'w') as csv_file:
             csv_file.write(command)
-        os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline > dbout.txt')
+        os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline -o dbout.txt')
         with open('dbout.txt', 'r') as db_out:
             db_out = db_out.readlines()[0]
         update.message.reply_text(db_out)
