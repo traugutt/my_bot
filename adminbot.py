@@ -93,6 +93,7 @@ def start(update: Update, context: CallbackContext):
 
 def reply(update: Update, context: CallbackContext):
     command = update.message.text
+    print(command)
 
     pattern_matcher = re.findall('db remove [a-z0-9_]', command)
     if len(pattern_matcher) >= 1:
