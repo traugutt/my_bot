@@ -119,7 +119,7 @@ def reply(update: Update, context: CallbackContext):
 
         update.message.reply_text('db updated')
 
-    pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
+    pattern_matcher = re.findall('assign [A-z_0-9]+ to [A-z_0-9]+', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -128,14 +128,14 @@ def reply(update: Update, context: CallbackContext):
         res = assign_n_tasks(topic, username)
         update.message.reply_text(res)
 
-    pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
-    if len(pattern_matcher) >= 1:
-        pattern = pattern_matcher[0]
-        pattern = pattern.split(' ')
-        topic = pattern[0]
-        username = pattern[2]
-        res = assign_n_tasks(topic, username)
-        update.message.reply_text(res)
+    # pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
+    # if len(pattern_matcher) >= 1:
+    #     pattern = pattern_matcher[0]
+    #     pattern = pattern.split(' ')
+    #     topic = pattern[0]
+    #     username = pattern[2]
+    #     res = assign_n_tasks(topic, username)
+    #     update.message.reply_text(res)
 
     pattern_matcher = re.findall('[Ss]tats [A-z_]+', command)
     if len(pattern_matcher) >= 1:
