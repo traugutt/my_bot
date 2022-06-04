@@ -105,12 +105,10 @@ def reply(update: Update, context: CallbackContext):
         db = client.students
         questions = db['bot_data']
 
-        res = questions.find({'topic': topic})
-
-        for i in res:
-            element_id = i['_id']
-            questions.update_one({'_id': element_id},
-                                 {"$set": {"assigned_to": [], "completed_by": [], "case_sensitive": False}})
+        questions.remove({'topic': topic})
+        number_of_questions = questions.find({'topic': topic})
+        if len(number_of_questions) == 0:
+            update.message.reply_text(f'removed {topic} from db')
 
     pattern_matcher = re.findall('^topic,task,original', command)
     if len(pattern_matcher) >= 1:
