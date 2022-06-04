@@ -109,7 +109,7 @@ def reply(update: Update, context: CallbackContext):
             questions.update_one({'_id': element_id},
                                  {"$set": {"assigned_to": [], "completed_by": [], "case_sensitive": False}})
 
-    pattern_matcher = re.findall('topic', command)
+    pattern_matcher = re.findall('topic\ttask', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         tsv_to_csv = re.sub("\t", ",", pattern)
@@ -117,7 +117,7 @@ def reply(update: Update, context: CallbackContext):
             csv_file.write(tsv_to_csv)
         os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline')
 
-        update.message.reply_text('updated')
+        update.message.reply_text('db updated')
 
     pattern_matcher = re.findall('[A-z_0-9]+ to [A-z_0-9]+', command)
     if len(pattern_matcher) >= 1:
