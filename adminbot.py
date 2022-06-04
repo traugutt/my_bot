@@ -114,14 +114,10 @@ def reply(update: Update, context: CallbackContext):
     if len(pattern_matcher) >= 1:
         with open("new_task_set.csv", 'w') as csv_file:
             csv_file.write(command)
-
-        old_stdout = sys.stdout
-        new_stdout = io.StringIO()
-        sys.stdout = new_stdout
-        os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline')
-        output = new_stdout.getvalue()
-        sys.stdout = old_stdout
-        update.message.reply_text(output)
+        os.system('mongoimport --host=127.0.0.1 -d students -c bot_data --type csv --file new_task_set.csv --headerline > dbout.txt')
+        with open('dbout.txt', 'r') as db_out:
+            db_out = db_out.readlines()[0]
+        update.message.reply_text(db_out)
 
     pattern_matcher = re.findall('assign [A-z_0-9]+ to [A-z_0-9]+', command)
     if len(pattern_matcher) >= 1:
