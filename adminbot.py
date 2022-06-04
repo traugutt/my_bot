@@ -107,7 +107,7 @@ def reply(update: Update, context: CallbackContext):
 
         questions.delete_many({'topic': topic})
         number_of_questions = questions.find({'topic': topic})
-        if len(number_of_questions) == 0:
+        if len(list(number_of_questions)) == 0:
             update.message.reply_text(f'removed {topic} from db')
 
     pattern_matcher = re.findall('^topic,task,original', command)
