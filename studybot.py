@@ -39,7 +39,7 @@ def start(update: Update, context: CallbackContext):
     total = questions.count_documents({"assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
 
     if not total:
-        message_reply_text = 'There\'s no homework for you to do at the moment. ' \
+        message_reply_text = 'There\'s no homework for you to do at the moment. 😌 ' \
                              'Press /start to check for homework at a later time.'
     else:
         message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
@@ -72,7 +72,7 @@ def check_answer(correct_answer, provided_answer):
         return False
 
 
-def create_tts(text, lang, username):
+def create_tts(text, lang):
     tts = NaverTTS(text, lang=lang)
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
@@ -129,7 +129,7 @@ def reply(update: Update, context: CallbackContext):
         audio = question.get('audio', None)
         if audio:
             lang = question['lang']
-            title = create_tts(correct_answer, lang, username)
+            title = create_tts(correct_answer, lang)
             path_to_file = 'bot_audio/' + title
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
@@ -155,7 +155,7 @@ def reply(update: Update, context: CallbackContext):
         element_id = previous_question['question_id']
         print(element_id)
         print(username)
-        is_case_sensitive = questions.find_one({'_id': element_id}).get('case_sensitive', False)
+        is_case_sensitive = questions.find_one({'_id': element_id}).get('case_sensitive', True)
 
         if not is_case_sensitive:
             previous_answer = previous_answer.lower()
@@ -241,9 +241,14 @@ def today(update: Update, context):
     query = {'assigned_to':{"$in":[username]}, "created": str(datetime.date.today())}
     res = questions.find(query)
     data = ''
-    for entry in res:
-        data += f"{entry['original']} - {entry['modified_original']}\n"
-    return update.message.reply_text(data)
+    counter = 1
+    if res:
+        for entry in res:
+            data += f"{counter}. {entry['original']} - {entry['modified_original']}\n"
+            counter += 1
+        return update.message.reply_text(data)
+    else:
+        return update.message.reply_text("No words were added today 😌.")
 def help_command(update: Update, context):
     """Displays info on how to use the bot."""
     update.message.reply_text("Use /start to test this bot.")

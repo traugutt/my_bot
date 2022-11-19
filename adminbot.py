@@ -63,7 +63,7 @@ def remove_tasks(topic, username):
 
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hello teacher!")
+    update.message.reply_text("Hello teacher! ✨")
 
 
 def reply(update: Update, context: CallbackContext):
@@ -75,7 +75,7 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[1]
         res = user_stats(username)
         return update.message.reply_text(res)
-    if context.chat_data.get('step', None) == 0 or not context.chat_data.get('step', None):
+    if context.chat_data.get('step', None) == 0:
         context.chat_data['username'] = command
         context.chat_data['step'] = 1
         return update.message.reply_text("Please insert term")
@@ -109,6 +109,7 @@ def reply(update: Update, context: CallbackContext):
         return
 
 def add(update: Update, context: CallbackContext):
+    context.chat_data['step'] = 0
     update.message.reply_text("Please add username")
 
 
