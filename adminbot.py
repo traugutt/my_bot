@@ -86,14 +86,14 @@ def reply(update: Update, context: CallbackContext):
     if context.chat_data.get('step', None) == 2:
         context.chat_data['translation'] = command
         lang = detect(context.chat_data.get('text', "English"))
-        if lang not in ['en', 'ko']:
+        if lang not in ['en', 'ko', 'he', 'iw']:
             lang = "en"
         query = {
             "topic": "",
             "task": context.chat_data['translation'],
             "original": context.chat_data['text'],
             "modified_original": context.chat_data['translation'],
-            "max_attempts": 3,
+            "max_attempts": 2,
             "audio": "yes",
             "lang": lang,
             "assigned_to": [

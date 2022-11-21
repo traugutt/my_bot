@@ -9,15 +9,18 @@ Basic example for a bot that uses inline keyboards. For an in-depth explanation,
 """
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from telegram import Update
+from telegram.ext import CallbackContext
 from telegram.ext import Updater, CommandHandler
 from telegram.ext import MessageHandler, Filters
 import datetime
 from navertts import NaverTTS
 import uuid
 from pymongo import MongoClient
-
+import requests
+import json
+import time
+import os
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
@@ -33,6 +36,33 @@ logger = logging.getLogger(__name__)
 # def start(update, context):
 #     context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
+
+def generate_hebrew_audio(text):
+    url = 'https://api.narakeet.com/text-to-speech/mp3?voice=lior'
+
+    headers = {'x-api-key': 'Ha7pORFOiy2Z1hqL35AIb5A7qRB6erfvayGk6jWj', 'Content-Type': 'text/plain'}
+
+    text = text
+    encoded_text = text.encode('utf-8')
+    data = {'data': text}
+
+    response = requests.post(url, headers=headers, data=encoded_text)
+    status_url = json.loads(response.text)['statusUrl']
+
+    succeeded = False
+    url = None
+    while not succeeded:
+        time.sleep(1)
+        polling_url = requests.get(status_url).text
+        get_url = json.loads(polling_url).get('result', None)
+        if get_url:
+            succeeded = True
+            url = get_url
+
+    return url
+
+def adjust_spaced_repetition():
+    questions
 
 def start(update: Update, context: CallbackContext):
     username = update.message.chat.username
@@ -63,9 +93,6 @@ def check_answer(correct_answer, provided_answer):
     if type(correct_answer) == list:
         if provided_answer in correct_answer:
             return True
-    elif type(correct_answer) == str:
-        print(f'correct answer: {correct_answer}')
-        print(f'provided answer: {provided_answer}')
     if provided_answer == correct_answer:
         return True
     else:
@@ -77,13 +104,10 @@ def create_tts(text, lang):
     text = uuid.uuid4()
     mp3_title = str(text) + '.mp3'
     tts.save('bot_audio/' + mp3_title)
-    print('audio saved')
     return mp3_title
 
 
 def reply(update: Update, context: CallbackContext):
-
-    print(datetime.datetime.now())
     username = update.message.chat.username
     previous_answer = update.message.text
     if '’' in previous_answer:
@@ -94,11 +118,8 @@ def reply(update: Update, context: CallbackContext):
                 char = '\''
             res += char
         previous_answer = res
-    print(f'previous_answer: {previous_answer}')
 
     if previous_answer.lower() == 'y':
-        print(previous_answer)
-
         question = questions.find_one({"assigned_to": {"$in": [username]},
                                        "completed_by": {"$nin": [username]}})
 
@@ -127,12 +148,19 @@ def reply(update: Update, context: CallbackContext):
                                 'number_of_times_answered': 0})
 
         audio = question.get('audio', None)
-        if audio:
+        lang = question.get('lang', None)
+        if audio and lang in ['en', 'ko']:
             lang = question['lang']
+            dir = 'bot_audio/'
+            for f in os.listdir(dir):
+                os.remove(os.path.join(dir, f))
             title = create_tts(correct_answer, lang)
             path_to_file = 'bot_audio/' + title
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+        elif audio and lang in ['he', 'iw']:
+            update.message.reply_text(task_line)
+            context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
         elif 'http' in audio:
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
@@ -151,11 +179,8 @@ def reply(update: Update, context: CallbackContext):
         element_id = previous_question['_id']
         correct_previous = previous_question['correct_answer']
 
-        print(correct_previous)
         element_id = previous_question['question_id']
-        print(element_id)
-        print(username)
-        is_case_sensitive = questions.find_one({'_id': element_id}).get('case_sensitive', True)
+        is_case_sensitive = questions.find_one({'_id': element_id}).get('case_sensitive', False)
 
         if not is_case_sensitive:
             previous_answer = previous_answer.lower()
@@ -177,7 +202,6 @@ def reply(update: Update, context: CallbackContext):
                                           'Press /start to check for new homework at a later time.')
             else:
 
-                print(question)
                 task_line = question['task']
                 task_text = question['modified_original']
                 correct_answer = question['original']
@@ -197,12 +221,16 @@ def reply(update: Update, context: CallbackContext):
                                         'number_of_times_answered': 0})
 
                 audio = question.get('audio', None)
-                if audio:
+                lang = question.get('lang', None)
+                if audio and lang in ['en', 'ko']:
                     lang = question['lang']
                     title = create_tts(correct_answer, lang)
                     path_to_file = 'bot_audio/' + title
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+                elif audio and lang in ['he', 'iw']:
+                    update.message.reply_text(task_line)
+                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
                 elif 'http' in audio:
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
@@ -223,8 +251,6 @@ def reply(update: Update, context: CallbackContext):
                 if type(correct_answer) == list:
                     answer_merger = '\' or \''.join(correct_answer)
                     correct_answer = answer_merger
-                
-                print(answer_merger)
 
                 explanation = questions.find_one({'_id': element_id}).get('explanation', None)
                 if explanation:
@@ -235,6 +261,7 @@ def reply(update: Update, context: CallbackContext):
                                               f'Please type in the correct answer to proceed.')
 
                 answers.update_one({'question_id': element_id, 'username': username}, {"$set": {'number_of_tries': 0}})
+
 
 def today(update: Update, context):
     username = update.message.chat.username
@@ -249,6 +276,8 @@ def today(update: Update, context):
         return update.message.reply_text(data)
     else:
         return update.message.reply_text("No words were added today 😌.")
+
+
 def help_command(update: Update, context):
     """Displays info on how to use the bot."""
     update.message.reply_text("Use /start to test this bot.")
