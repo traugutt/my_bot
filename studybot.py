@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-#!/usr/bin/env python
-# pylint: disable=C0116,W0613
-# This program is dedicated to the public domain under the CC0 license.
-
-"""
-Basic example for a bot that uses inline keyboards. For an in-depth explanation, check out
- https://git.io/JOmFw.
-"""
 import logging
-
 from telegram import Update
-from telegram.ext import CallbackContext
-from telegram.ext import Updater, CommandHandler
-from telegram.ext import MessageHandler, Filters
+from telegram.ext import CallbackContext, Updater, CommandHandler, MessageHandler, Filters
 import datetime
 from navertts import NaverTTS
 import uuid
@@ -21,6 +9,7 @@ import requests
 import json
 import time
 import os
+from bson.objectid import ObjectId
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
@@ -33,9 +22,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# def start(update, context):
-#     context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
-
 
 def generate_hebrew_audio(text):
     url = 'https://api.narakeet.com/text-to-speech/mp3?voice=lior'
@@ -44,7 +30,6 @@ def generate_hebrew_audio(text):
 
     text = text
     encoded_text = text.encode('utf-8')
-    data = {'data': text}
 
     response = requests.post(url, headers=headers, data=encoded_text)
     status_url = json.loads(response.text)['statusUrl']
@@ -52,7 +37,6 @@ def generate_hebrew_audio(text):
     succeeded = False
     url = None
     while not succeeded:
-        time.sleep(1)
         polling_url = requests.get(status_url).text
         get_url = json.loads(polling_url).get('result', None)
         if get_url:
@@ -61,11 +45,36 @@ def generate_hebrew_audio(text):
 
     return url
 
-def adjust_spaced_repetition():
-    questions
+
+def apply_spaced_repetition(update):
+    day = 1000 * 60 * 1440
+    three_days = day * 3
+    six_days = three_days * 2
+    twelve_days = six_days * 2
+    month_ish = twelve_days * 3
+    intervals = [day, three_days, six_days, twelve_days, month_ish]
+    attempts_count = [3, 4, 5, 6, 7]
+    username = update.message.chat.username
+    answer_attempts = answers.find({'username': username})
+    for attempt in answer_attempts:
+        if attempt.get('number_of_times_answered', None) < 4:
+            q_id = attempt.get('question_id', None)
+            question = questions.find_one({'_id': ObjectId(q_id)})
+            if question:
+                questions.update_one({'_id': ObjectId(q_id)}, {'$pull': {'completed_by': username}})
+        for interval, attempt_count in zip(intervals, attempts_count):
+            if attempt.get('number_of_times_answered', None) == attempt_count and \
+                    int(time.time()) - attempt.get('answered_last', None) < interval:
+                q_id = attempt.get('question_id', None)
+                question = questions.find_one({'_id': ObjectId(q_id)})
+                if question:
+                    questions.update_one({'_id': ObjectId(q_id)}, {'$pull': {'completed_by': username}})
+
 
 def start(update: Update, context: CallbackContext):
+    apply_spaced_repetition(update)
     username = update.message.chat.username
+
     total = questions.count_documents({"assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
 
     if not total:
@@ -74,18 +83,7 @@ def start(update: Update, context: CallbackContext):
     else:
         message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
                              f'Ready to do your homework? Type in "Y or y" to proceed.'
-    
-    # keyboard = [
-    # [
-    #     KeyboardButton("Begin", callback_data='1')
-    # ],
-    # [
-    #     KeyboardButton("/stop", callback_data='/stop')
-    # ]
-    # ]
 
-    # reply_markup = ReplyKeyboardMarkup(keyboard)
-    # update.message.reply_text(message_reply_text, reply_markup=reply_markup)
     update.message.reply_text(message_reply_text)
 
 
@@ -108,6 +106,7 @@ def create_tts(text, lang):
 
 
 def reply(update: Update, context: CallbackContext):
+    #apply_spaced_repetition(update)
     username = update.message.chat.username
     previous_answer = update.message.text
     if '’' in previous_answer:
@@ -137,7 +136,8 @@ def reply(update: Update, context: CallbackContext):
 
         if bool(is_answered):
             answers.update_one({'question_id': element_id, 'username': username},
-                               {'$set': {'time': datetime.datetime.utcnow()}})
+                               {'$set': {'time': datetime.datetime.utcnow(), 'answered_last': int(time.time())}})
+
         else:
             answers.insert_one({'question_id': element_id,
                                 'username': username,
@@ -145,15 +145,17 @@ def reply(update: Update, context: CallbackContext):
                                 'time': datetime.datetime.utcnow(),
                                 'number_of_tries': 0,
                                 'number_of_tries_historic': 0,
-                                'number_of_times_answered': 0})
+                                'number_of_times_answered': 0,
+                                'answered_last': int(time.time())
+                                })
 
         audio = question.get('audio', None)
         lang = question.get('lang', None)
         if audio and lang in ['en', 'ko']:
             lang = question['lang']
-            dir = 'bot_audio/'
-            for f in os.listdir(dir):
-                os.remove(os.path.join(dir, f))
+            directory = 'bot_audio/'
+            for f in os.listdir(directory):
+                os.remove(os.path.join(directory, f))
             title = create_tts(correct_answer, lang)
             path_to_file = 'bot_audio/' + title
             update.message.reply_text(task_line)
@@ -176,7 +178,6 @@ def reply(update: Update, context: CallbackContext):
             previous_questions_sorted.append(question)
 
         previous_question = previous_questions_sorted[0]
-        element_id = previous_question['_id']
         correct_previous = previous_question['correct_answer']
 
         element_id = previous_question['question_id']
@@ -208,9 +209,11 @@ def reply(update: Update, context: CallbackContext):
                 element_id = question['_id']
                 is_answered = answers.find_one({'question_id': element_id, 'username': username})
 
-                if is_answered:
+                if bool(is_answered):
                     answers.update_one({'question_id': element_id, 'username': username},
-                                       {'$set': {'time': datetime.datetime.utcnow()}})
+                                       {'$set': {'time': datetime.datetime.utcnow(),
+                                                 'answered_last': int(time.time())}})
+
                 else:
                     answers.insert_one({'question_id': element_id,
                                         'username': username,
@@ -218,7 +221,9 @@ def reply(update: Update, context: CallbackContext):
                                         'time': datetime.datetime.utcnow(),
                                         'number_of_tries': 0,
                                         'number_of_tries_historic': 0,
-                                        'number_of_times_answered': 0})
+                                        'number_of_times_answered': 0,
+                                        'answered_last': int(time.time())
+                                        })
 
                 audio = question.get('audio', None)
                 lang = question.get('lang', None)
@@ -230,7 +235,8 @@ def reply(update: Update, context: CallbackContext):
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
                 elif audio and lang in ['he', 'iw']:
                     update.message.reply_text(task_line)
-                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
+                    context.bot.send_audio(chat_id=update.effective_chat.id,
+                                           audio=generate_hebrew_audio(correct_answer))
                 elif 'http' in audio:
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
@@ -246,8 +252,6 @@ def reply(update: Update, context: CallbackContext):
                                    {"$inc": {'number_of_tries': 1, 'number_of_tries_historic': 1}})
             else:
                 correct_answer = questions.find_one({'_id': element_id})['original']
-
-                answer_merger = ''
                 if type(correct_answer) == list:
                     answer_merger = '\' or \''.join(correct_answer)
                     correct_answer = answer_merger
@@ -263,9 +267,9 @@ def reply(update: Update, context: CallbackContext):
                 answers.update_one({'question_id': element_id, 'username': username}, {"$set": {'number_of_tries': 0}})
 
 
-def today(update: Update, context):
+def today(update: Update, context: CallbackContext):
     username = update.message.chat.username
-    query = {'assigned_to':{"$in":[username]}, "created": str(datetime.date.today())}
+    query = {'assigned_to': {"$in": [username]}, "created": str(datetime.date.today())}
     res = questions.find(query)
     data = ''
     counter = 1
@@ -278,18 +282,17 @@ def today(update: Update, context):
         return update.message.reply_text("No words were added today 😌.")
 
 
-def help_command(update: Update, context):
+def help_command(update: Update):
     """Displays info on how to use the bot."""
     update.message.reply_text("Use /start to test this bot.")
 
 
-def stop(update: Update, context):
+def stop(update: Update):
     update.message.reply_text("Use /start to start again.")
 
 
 def main() -> None:
     """Run the bot."""
-    # Create the Updater and pass it your bot's token.
     updater = Updater("1896847698:AAFtp1t66yDx-z8-H2m2_d_lj2eC59Q0ay4", use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
@@ -299,16 +302,8 @@ def main() -> None:
     updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
-
-    # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT
     updater.idle()
 
 
 if __name__ == '__main__':
     main()
-
-# daemon = Daemonize(app="studybot", pid=pid, action=main)
-# daemon.start()
-
-
