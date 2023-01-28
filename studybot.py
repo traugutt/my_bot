@@ -5,11 +5,14 @@ import datetime
 from navertts import NaverTTS
 import uuid
 from pymongo import MongoClient
+from langdetect import detect
 import requests
 import json
 import time
 import os
 from bson.objectid import ObjectId
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler, ContextTypes
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
@@ -21,7 +24,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
 
 def generate_hebrew_audio(text):
     url = 'https://api.narakeet.com/text-to-speech/mp3?voice=lior'
@@ -82,9 +84,16 @@ def start(update: Update, context: CallbackContext):
                              'Press /start to check for homework at a later time.'
     else:
         message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
-                             f'Ready to do your homework? Type in "Y or y" to proceed.'
-
+                             f'Ready to do your homework? Type in "y" or "Y" to proceed. Use /add to add terms.'
+    context.chat_data['step'] = -1
     update.message.reply_text(message_reply_text)
+
+def here(update, context: CallbackContext):
+    context.chat_data['y'] = True
+
+def add(update: Update, context: CallbackContext):
+    context.chat_data['step'] = 0
+    update.message.reply_text("Please add term")
 
 
 def check_answer(correct_answer, provided_answer):
@@ -105,10 +114,44 @@ def create_tts(text, lang):
     return mp3_title
 
 
+def add_item(update, context):
+    command = update.message.text
+    username = update.message.chat.username
+    if context.chat_data.get('step', None) == 0:
+        context.chat_data['text'] = command
+        context.chat_data['step'] = 1
+        return update.message.reply_text("Please insert translation")
+    if context.chat_data.get('step', None) == 1:
+        context.chat_data['translation'] = command
+        lang = detect(context.chat_data.get('text', "English"))
+        if lang not in ['en', 'ko', 'he', 'iw']:
+            lang = "en"
+        query = {
+            "topic": "",
+            "task": context.chat_data['translation'],
+            "original": context.chat_data['text'],
+            "modified_original": context.chat_data['translation'],
+            "max_attempts": 1,
+            "audio": "yes",
+            "lang": lang,
+            "assigned_to": [
+                username
+            ],
+            "completed_by": [
+            ],
+            "created": str(datetime.date.today())
+        }
+        questions.insert_one(query)
+        update.message.reply_text(f"Inserted {str(query)}")
+        context.chat_data['step'] = -1
+        return
+
+
 def reply(update: Update, context: CallbackContext):
     #apply_spaced_repetition(update)
     username = update.message.chat.username
     previous_answer = update.message.text
+
     if '’' in previous_answer:
         res = ''
         split_chars = list(previous_answer)
@@ -169,7 +212,8 @@ def reply(update: Update, context: CallbackContext):
         else:
             update.message.reply_text(task_line)
             update.message.reply_text(task_text)
-
+    elif context.chat_data.get('step', None) in [0, 1]:
+        add_item(update, context)
     else:
         previous_questions_raw = answers.find({'username': username}).sort([('time', -1)])
         previous_questions_sorted = []
@@ -245,7 +289,7 @@ def reply(update: Update, context: CallbackContext):
                     update.message.reply_text(task_text)
         else:
             num_of_tries = answers.find_one({'question_id': element_id, 'username': username})['number_of_tries']
-            max_attempts = 3
+            max_attempts = 1
             if num_of_tries < max_attempts:
                 update.message.reply_text('Please try again.')
                 answers.update_one({'question_id': element_id, 'username': username},
@@ -299,6 +343,8 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('today', today))
+    updater.dispatcher.add_handler(CommandHandler('add', add))
+    updater.dispatcher.add_handler(CommandHandler('here', here))
     updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
