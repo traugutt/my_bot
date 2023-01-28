@@ -88,13 +88,10 @@ def start(update: Update, context: CallbackContext):
     context.chat_data['step'] = -1
     update.message.reply_text(message_reply_text)
 
-def here(update, context: CallbackContext):
-    context.chat_data['y'] = True
 
 def add(update: Update, context: CallbackContext):
     context.chat_data['step'] = 0
     update.message.reply_text("Please add term")
-
 
 def check_answer(correct_answer, provided_answer):
     if type(correct_answer) == list:
@@ -344,7 +341,6 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('today', today))
     updater.dispatcher.add_handler(CommandHandler('add', add))
-    updater.dispatcher.add_handler(CommandHandler('here', here))
     updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
