@@ -159,6 +159,7 @@ def reply(update: Update, context: CallbackContext):
         previous_answer = res
 
     if previous_answer.lower() == 'y':
+        print('line 162')
         question = questions.find_one({"assigned_to": {"$in": [username]},
                                        "completed_by": {"$nin": [username]}})
 
@@ -171,7 +172,7 @@ def reply(update: Update, context: CallbackContext):
         correct_answer = question['original']
         element_id = question['_id']
         task_line = question['task']
-
+        print('line 175')
         is_answered = answers.find_one({'question_id': element_id, 'username': username})
 
         if bool(is_answered):
@@ -196,6 +197,7 @@ def reply(update: Update, context: CallbackContext):
             directory = 'bot_audio/'
             for f in os.listdir(directory):
                 os.remove(os.path.join(directory, f))
+                print('line 200')
             title = create_tts(correct_answer, lang)
             path_to_file = 'bot_audio/' + title
             update.message.reply_text(task_line)
