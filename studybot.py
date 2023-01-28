@@ -189,7 +189,7 @@ def reply(update: Update, context: CallbackContext):
                                 'number_of_times_answered': 0,
                                 'answered_last': int(time.time())
                                 })
-
+        print('line 192')
         audio = question.get('audio', None)
         lang = question.get('lang', None)
         if audio and lang in ['en', 'ko']:
