@@ -191,9 +191,12 @@ def reply(update: Update, context: CallbackContext):
                                 })
         print('line 192')
         audio = question.get('audio', None)
+        print("line 914")
         lang = question.get('lang', None)
+        print("line 196")
         if audio and lang in ['en', 'ko']:
             lang = question['lang']
+            print("199")
             directory = 'bot_audio/'
             for f in os.listdir(directory):
                 os.remove(os.path.join(directory, f))
