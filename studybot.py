@@ -54,12 +54,13 @@ def apply_spaced_repetition(update):
     six_days = three_days * 2
     twelve_days = six_days * 2
     month_ish = twelve_days * 3
-    intervals = [day, three_days, six_days, twelve_days, month_ish]
-    attempts_count = [3, 4, 5, 6, 7]
+    two_months = twelve_days * 6
+    intervals = [day, three_days, six_days, twelve_days, month_ish, two_months]
+    attempts_count = [2, 3, 4, 5, 6, 7]
     username = update.message.chat.username
     answer_attempts = answers.find({'username': username})
     for attempt in answer_attempts:
-        if attempt.get('number_of_times_answered', None) < 4:
+        if attempt.get('number_of_times_answered', None) < 3:
             q_id = attempt.get('question_id', None)
             question = questions.find_one({'_id': ObjectId(q_id)})
             if question:
@@ -159,7 +160,6 @@ def reply(update: Update, context: CallbackContext):
         previous_answer = res
 
     if previous_answer.lower() == 'y':
-        print('line 162')
         question = questions.find_one({"assigned_to": {"$in": [username]},
                                        "completed_by": {"$nin": [username]}})
 
@@ -172,7 +172,6 @@ def reply(update: Update, context: CallbackContext):
         correct_answer = question['original']
         element_id = question['_id']
         task_line = question['task']
-        print('line 175')
         is_answered = answers.find_one({'question_id': element_id, 'username': username})
 
         if bool(is_answered):
@@ -189,18 +188,13 @@ def reply(update: Update, context: CallbackContext):
                                 'number_of_times_answered': 0,
                                 'answered_last': int(time.time())
                                 })
-        print('line 192')
         audio = question.get('audio', None)
-        print("line 914")
         lang = question.get('lang', None)
-        print("line 196")
         if audio and lang in ['en', 'ko']:
             lang = question['lang']
-            print("199")
-            directory = './bot_audio/'
+            directory = 'bot_audio/'
             for f in os.listdir(directory):
                 os.remove(os.path.join(directory, f))
-                print('line 200')
             title = create_tts(correct_answer, lang)
             path_to_file = 'bot_audio/' + title
             update.message.reply_text(task_line)
@@ -346,7 +340,7 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('today', today))
     updater.dispatcher.add_handler(CommandHandler('add', add))
-    #updater.dispatcher.add_error_handler(start)
+    updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
     updater.idle()
