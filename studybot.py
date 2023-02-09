@@ -56,7 +56,7 @@ def apply_spaced_repetition(update):
     month_ish = twelve_days * 3
     two_months = twelve_days * 6
     intervals = [day, three_days, six_days, twelve_days, month_ish, two_months]
-    attempts_count = [2, 3, 4, 5, 6, 7]
+    attempts_count = [3, 4, 5, 6, 7, 8]
     username = update.message.chat.username
     answer_attempts = answers.find({'username': username})
     for attempt in answer_attempts:
@@ -65,13 +65,14 @@ def apply_spaced_repetition(update):
             question = questions.find_one({'_id': ObjectId(q_id)})
             if question:
                 questions.update_one({'_id': ObjectId(q_id)}, {'$pull': {'completed_by': username}})
-        for interval, attempt_count in zip(intervals, attempts_count):
-            if attempt.get('number_of_times_answered', None) == attempt_count and \
-                    int(time.time()) - attempt.get('answered_last', None) < interval:
-                q_id = attempt.get('question_id', None)
-                question = questions.find_one({'_id': ObjectId(q_id)})
-                if question:
-                    questions.update_one({'_id': ObjectId(q_id)}, {'$pull': {'completed_by': username}})
+        else:
+            for interval, attempt_count in zip(intervals, attempts_count):
+                if attempt.get('number_of_times_answered', None) == attempt_count and \
+                        int(time.time()) - attempt.get('answered_last', None) > interval:
+                    q_id = attempt.get('question_id', None)
+                    question = questions.find_one({'_id': ObjectId(q_id)})
+                    if question:
+                        questions.update_one({'_id': ObjectId(q_id)}, {'$pull': {'completed_by': username}})
 
 
 def start(update: Update, context: CallbackContext):

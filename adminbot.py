@@ -137,6 +137,7 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('audio', audio))
     updater.dispatcher.add_handler(CommandHandler('add', add))
+    updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
     updater.idle()
