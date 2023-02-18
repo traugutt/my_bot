@@ -75,6 +75,22 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[1]
         res = user_stats(username)
         return update.message.reply_text(res)
+    pattern_matcher = re.findall('[Aa]ssign [A-z_]+ to [A-z_]+', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[1]
+        username = pattern[2]
+        res = assign_n_tasks(topic, username)
+        return update.message.reply_text(res)
+    pattern_matcher = re.findall('[Rr]emove [A-z_]+ from [A-z_]+', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[1]
+        username = pattern[2]
+        res = remove_tasks(topic, username)
+        return update.message.reply_text(res)
     if context.chat_data.get('step', None) == 0:
         context.chat_data['username'] = command
         context.chat_data['step'] = 1
@@ -107,6 +123,7 @@ def reply(update: Update, context: CallbackContext):
         update.message.reply_text(f"Inserted {str(query)}")
         context.chat_data['step'] = 0
         return
+
 
 def add(update: Update, context: CallbackContext):
     context.chat_data['step'] = 0
