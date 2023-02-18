@@ -83,7 +83,7 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[3]
         res = assign_n_tasks(topic, username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Rr]emove [A-z_]+ from [A-z_]+', command)
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+ from [A-z_]+', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
