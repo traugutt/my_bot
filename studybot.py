@@ -190,7 +190,7 @@ def reply(update: Update, context: CallbackContext):
                                 'number_of_times_answered': 0,
                                 'answered_last': int(time.time())
                                 })
-        audio = question.get('audio', None)
+        audio = True if question.get('audio', None) == "yes" else False
         lang = question.get('lang', None)
         if audio and lang in ['en', 'ko']:
             lang = question['lang']
@@ -204,7 +204,7 @@ def reply(update: Update, context: CallbackContext):
         elif audio and lang in ['he', 'iw']:
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
-        elif 'http' in audio:
+        elif audio and 'http' in audio:
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
         else:
@@ -267,7 +267,7 @@ def reply(update: Update, context: CallbackContext):
                                         'answered_last': int(time.time())
                                         })
 
-                audio = question.get('audio', None)
+                audio = True if question.get('audio', None) == "yes" else False
                 lang = question.get('lang', None)
                 if audio and lang in ['en', 'ko']:
                     lang = question['lang']
@@ -279,7 +279,7 @@ def reply(update: Update, context: CallbackContext):
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id,
                                            audio=generate_hebrew_audio(correct_answer))
-                elif 'http' in audio:
+                elif audio and 'http' in audio:
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
                 else:
