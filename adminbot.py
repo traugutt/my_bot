@@ -8,6 +8,7 @@ from telegram.ext import Updater, CommandHandler
 from telegram.ext import MessageHandler, Filters
 from langdetect import detect
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.students
@@ -54,12 +55,32 @@ def user_stats(username):
 
 
 def remove_tasks(topic, username):
-    res = questions.find({'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
-    for i in res:
-        element_id = i['_id']
-        task = i['original']
-        questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
-    return 'Removed %s from %s' % (topic, username)
+    if not username:
+        query = {'_id': ObjectId(topic)}
+        res = questions.find_one(query)
+        if res:
+            questions.delete_one(query)
+            return 'Removed %s' % (res['task'])
+        else:
+            return 'Sorry, didn\'t find it 😬'
+    else:
+        res = questions.find({'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+        if not res.retrieved:
+            res = questions.find(
+                {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+        try:
+            for i in res:
+                element_id = i['_id']
+                task = i['original']
+                questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
+            return 'Removed %s from %s' % (topic, username)
+        except Exception:
+            return 'Oh no! 😮️'
+
+def get_task_id(topic):
+    res = questions.find_one({'task': topic})
+    task_id = res.get('_id', None) if res else res
+    return task_id
 
 
 def start(update: Update, context: CallbackContext):
@@ -68,14 +89,14 @@ def start(update: Update, context: CallbackContext):
 
 def reply(update: Update, context: CallbackContext):
     command = update.message.text
-    pattern_matcher = re.findall('[Ss]tats [A-z_]+', command)
+    pattern_matcher = re.findall('[Ss]tats [A-z_]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
         username = pattern[1]
         res = user_stats(username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Aa]ssign [A-z_0-9]+ to [A-z_]+', command)
+    pattern_matcher = re.findall('[Aa]ssign [A-z_0-9]+ to [A-z_]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -83,14 +104,35 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[3]
         res = assign_n_tasks(topic, username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+ from [A-z_]+', command)
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+ from [A-z_]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
         topic = pattern[1]
-        username = pattern[2]
+        username = pattern[3]
         res = remove_tasks(topic, username)
         return update.message.reply_text(res)
+    pattern_matcher = re.findall('[Gg]et [A-z_0-9]+$', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[1]
+        res = get_task_id(topic)
+        if not res:
+            res = "Not found, sorry 🥺"
+        return update.message.reply_text(str(res))
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+$', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        topic = pattern[1]
+        username = None
+        res = remove_tasks(topic, username)
+        return update.message.reply_text(res)
+    if context.chat_data['batch_step'] == 0:
+        context.chat_data['username'] = command
+        context.chat_data['batch_step'] = 1
+        return update.message.reply_text("Please insert a bunch of stuff")
     if context.chat_data.get('step', None) == 0:
         context.chat_data['username'] = command
         context.chat_data['step'] = 1
@@ -101,8 +143,11 @@ def reply(update: Update, context: CallbackContext):
         return update.message.reply_text("Please insert translation")
     if context.chat_data.get('step', None) == 2:
         context.chat_data['translation'] = command
-        lang = detect(context.chat_data.get('text', "English"))
-        if lang not in ['en', 'ko', 'he', 'iw']:
+        try:
+            lang = detect(context.chat_data.get('text', "English"))
+            if lang not in ['en', 'ko', 'he', 'iw']:
+                lang = "en"
+        except Exception as e:
             lang = "en"
         query = {
             "topic": "",
@@ -120,13 +165,52 @@ def reply(update: Update, context: CallbackContext):
             "created": str(datetime.date.today())
         }
         questions.insert_one(query)
-        update.message.reply_text(f"Inserted {str(query)}")
+        update.message.reply_text(f"Inserted: {query.get('original')} - {query.get('task')}\nId: {query.get('_id')}")
         context.chat_data['step'] = 0
+        return
+    if context.chat_data.get('batch_step', None) == 1:
+        items = command.split('\n')
+        inserted = 'Inserted:\n'
+        for item in items:
+            text = item.split(' $ ')[0].strip()
+            translation = item.split(' $ ')[1].strip()
+            try:
+                lang = detect(text)
+                if lang not in ['en', 'ko', 'he', 'iw']:
+                    lang = "en"
+            except Exception as e:
+                lang = "en"
+            topic = f"{context.chat_data['username']}_{lang}_{datetime.date.today().isoformat()}"
+            query = {
+                "topic": topic,
+                "task": translation,
+                "original": text,
+                "modified_original": translation,
+                "max_attempts": 2,
+                "audio": "yes",
+                "lang": lang,
+                "assigned_to": [
+                    context.chat_data['username']
+                ],
+                "completed_by": [
+                ],
+                "created": str(datetime.date.today())
+            }
+
+            questions.insert_one(query)
+            inserted += f"topic: {topic}\t {query.get('original')} - {query.get('task')}\tid: {query.get('_id')}\tlang: {lang}\n"
+        update.message.reply_text(inserted)
+        context.chat_data['batch_step'] = 0
         return
 
 
 def add(update: Update, context: CallbackContext):
     context.chat_data['step'] = 0
+    update.message.reply_text("Please add username")
+
+
+def batch(update: Update, context: CallbackContext):
+    context.chat_data['batch_step'] = 0
     update.message.reply_text("Please add username")
 
 
@@ -154,6 +238,7 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('audio', audio))
     updater.dispatcher.add_handler(CommandHandler('add', add))
+    updater.dispatcher.add_handler(CommandHandler('batch', batch))
     updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
