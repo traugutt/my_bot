@@ -87,8 +87,10 @@ def remove_all(username):
 
 def get_task_id(topic):
     res = questions.find({'task': topic})
+    print({'task': topic})
     matches = ''
     for i in res:
+        print(i)
         matches += f"id: {i['_id']} - topic: {i['topic']} text: {i['original']} task: {i['task']}"
     return matches
 
@@ -134,7 +136,9 @@ def reply(update: Update, context: CallbackContext):
         pattern = pattern_matcher[0]
         pattern = pattern.split('etid')
         topic = pattern[1].strip()
+        print(topic)
         res = get_task_id(topic)
+        print(res)
         if not res:
             res = "Not found, sorry 🥺"
         return update.message.reply_text(str(res))
