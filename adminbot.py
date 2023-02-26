@@ -96,7 +96,7 @@ def get_task_id(topic):
 
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hello gorgeous! ✨\nThe commands are:\n'[Ss]tats [A-z_]+$'\n'[Aa]ssign [A-z_0-9-]+ to [A-z_]+$'\n'[Rr]emove [A-z_0-9-]+ from [A-z_]+$' (unassign all from topic or single id)\n'[Cc]lear [A-z_]+$'(unassign all tasks from user)\n'[Gg]et [A-z_0-9-]+$' (get db id for removal)\n'[Rr]emove [A-z_0-9-]+$' (remove entry from db by id)")
+    update.message.reply_text("Hello gorgeous! ✨\nThe commands are:\n'[Ss]tats [A-z_]+$'\n'[Aa]ssign [A-z_0-9-]+ to [A-z_]+$'\n'[Rr]emove [A-z_0-9-]+ from [A-z_]+$' (unassign all from topic or single id)\n'[Cc]lear [A-z_]+$'(unassign all tasks from user)\n'[Gg]etid [A-z_0-9-]+$' (get db id for removal)\n'[Rr]emove [A-z_0-9-]+$' (remove entry from db by id)")
 
 
 def reply(update: Update, context: CallbackContext):
