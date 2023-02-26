@@ -55,6 +55,7 @@ def user_stats(username):
 
 
 def remove_tasks(topic, username):
+    print('inside remove tasks')
     if not username:
         query = {'_id': ObjectId(topic)}
         res = questions.find_one(query)
@@ -66,6 +67,9 @@ def remove_tasks(topic, username):
     else:
         res = questions.find_one(
             {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+        if res:
+            questions.update_one({'_id': ObjectId(topic)}, {'$pull': {"assigned_to": username}})
+            return 'Removed %s from %s' % (topic, username)
         if not res:
             try:
                 res = questions.find(
@@ -123,6 +127,7 @@ def reply(update: Update, context: CallbackContext):
         pattern = pattern.split(' ')
         topic = pattern[1]
         username = pattern[3]
+        print('start removing')
         res = remove_tasks(topic, username)
         return update.message.reply_text(res)
     pattern_matcher = re.findall('[Cc]lear [A-z_]+$', command)
