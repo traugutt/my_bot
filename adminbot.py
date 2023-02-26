@@ -64,11 +64,12 @@ def remove_tasks(topic, username):
         else:
             return 'Sorry, didn\'t find it 😬'
     else:
-        res = questions.find({'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+        res = questions.find_one(
+            {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
         if not res:
             try:
                 res = questions.find(
-                    {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+                    {'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
                 for i in res:
                     element_id = i['_id']
                     task = i['original']
