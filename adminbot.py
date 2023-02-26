@@ -77,6 +77,14 @@ def remove_tasks(topic, username):
         except Exception:
             return 'Oh no! 😮️'
 
+
+def remove_all(username):
+        questions.delete_many({"assigned_to": {"$in": [username]}})
+        res = questions.find_one({"assigned_to": {"$in": [username]}})
+        if not res:
+                return 'This slacker doesn\'t have any 😜'
+
+
 def get_task_id(topic):
     res = questions.find_one({'task': topic})
     task_id = res.get('_id', None) if res else res
@@ -84,7 +92,7 @@ def get_task_id(topic):
 
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hello teacher! ✨")
+    update.message.reply_text("Hello gorgeous! ✨")
 
 
 def reply(update: Update, context: CallbackContext):
@@ -96,7 +104,7 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[1]
         res = user_stats(username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Aa]ssign [A-z_0-9]+ to [A-z_]+$', command)
+    pattern_matcher = re.findall('[Aa]ssign [A-z_0-9-]+ to [A-z_]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -104,7 +112,7 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[3]
         res = assign_n_tasks(topic, username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+ from [A-z_]+$', command)
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9-]+ from [A-z_]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -112,7 +120,14 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[3]
         res = remove_tasks(topic, username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Gg]et [A-z_0-9]+$', command)
+    pattern_matcher = re.findall('[Cc]lear [A-z_]+$', command)
+    if len(pattern_matcher) >= 1:
+        pattern = pattern_matcher[0]
+        pattern = pattern.split(' ')
+        username = pattern[1]
+        res = remove_all(username)
+        return update.message.reply_text(res)
+    pattern_matcher = re.findall('[Gg]et [A-z_0-9-]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -121,7 +136,7 @@ def reply(update: Update, context: CallbackContext):
         if not res:
             res = "Not found, sorry 🥺"
         return update.message.reply_text(str(res))
-    pattern_matcher = re.findall('[Rr]emove [A-z_0-9]+$', command)
+    pattern_matcher = re.findall('[Rr]emove [A-z_0-9-]+$', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
@@ -129,7 +144,7 @@ def reply(update: Update, context: CallbackContext):
         username = None
         res = remove_tasks(topic, username)
         return update.message.reply_text(res)
-    if context.chat_data['batch_step'] == 0:
+    if context.chat_data.get('batch_step', None) == 0:
         context.chat_data['username'] = command
         context.chat_data['batch_step'] = 1
         return update.message.reply_text("Please insert a bunch of stuff")
