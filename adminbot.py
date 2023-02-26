@@ -127,7 +127,7 @@ def reply(update: Update, context: CallbackContext):
         username = pattern[1]
         res = remove_all(username)
         return update.message.reply_text(res)
-    pattern_matcher = re.findall('[Gg]et [A-z_0-9-]+$', command)
+    pattern_matcher = re.findall('[Gg]etid.+', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
         pattern = pattern.split(' ')
