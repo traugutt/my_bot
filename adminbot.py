@@ -76,11 +76,14 @@ def remove_tasks(topic, username):
         else:
             res = questions.find(
                 {'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
-            for i in res:
-                element_id = i['_id']
-                task = i['original']
-                questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
-            return 'Removed %s from %s' % (topic, username)
+            if len(list(res)) > 0:
+                for i in res:
+                    element_id = i['_id']
+                    task = i['original']
+                    questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
+                return 'Removed %s from %s' % (topic, username)
+            else:
+                return 'Already removed or was never there 🫥'
 
 
 def remove_all(username):
