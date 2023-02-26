@@ -130,7 +130,7 @@ def reply(update: Update, context: CallbackContext):
     pattern_matcher = re.findall('[Gg]etid.+', command)
     if len(pattern_matcher) >= 1:
         pattern = pattern_matcher[0]
-        pattern = pattern.split(' ')
+        pattern = pattern.split('etid')
         topic = pattern[1]
         res = get_task_id(topic)
         if not res:
