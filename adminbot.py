@@ -65,20 +65,22 @@ def remove_tasks(topic, username):
         else:
             return 'Sorry, didn\'t find it 😬'
     else:
-        try:
+        if ObjectId.is_valid(topic):
             res = questions.find_one(
                 {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
             if res:
                 questions.update_one({'_id': ObjectId(topic)}, {'$pull': {"assigned_to": username}})
                 return 'Removed %s from %s' % (topic, username)
-        except Exception:
-                res = questions.find(
-                    {'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
-                for i in res:
-                    element_id = i['_id']
-                    task = i['original']
-                    questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
-                return 'Removed %s from %s' % (topic, username)
+            else:
+                return 'Didn\'t find it :('
+        else:
+            res = questions.find(
+                {'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+            for i in res:
+                element_id = i['_id']
+                task = i['original']
+                questions.update_one({'_id': element_id}, {'$pull': {"assigned_to": username}})
+            return 'Removed %s from %s' % (topic, username)
 
 
 def remove_all(username):
