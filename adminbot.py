@@ -65,12 +65,14 @@ def remove_tasks(topic, username):
         else:
             return 'Sorry, didn\'t find it 😬'
     else:
+        print(ObjectId(topic))
         res = questions.find_one(
             {'_id': ObjectId(topic), "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
+        print(res)
         if res:
             questions.update_one({'_id': ObjectId(topic)}, {'$pull': {"assigned_to": username}})
             return 'Removed %s from %s' % (topic, username)
-        if not res:
+        else:
             try:
                 res = questions.find(
                     {'topic': topic, "assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
