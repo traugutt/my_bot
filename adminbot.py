@@ -211,13 +211,16 @@ def reply(update: Update, context: CallbackContext):
             except Exception as e:
                 lang = "en"
             topic = f"{context.chat_data['username']}_{lang}_{datetime.date.today().isoformat()}"
+            audio = "yes"
+            if len(translation) == 1:
+                audio = "no"
             query = {
                 "topic": topic,
                 "task": translation,
                 "original": text,
                 "modified_original": translation,
                 "max_attempts": 2,
-                "audio": "yes",
+                "audio": audio,
                 "lang": lang,
                 "assigned_to": [
                     context.chat_data['username']
