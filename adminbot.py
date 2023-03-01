@@ -212,8 +212,6 @@ def reply(update: Update, context: CallbackContext):
                 lang = "en"
             topic = f"{context.chat_data['username']}_{lang}_{datetime.date.today().isoformat()}"
             audio = "yes"
-            if len(translation) == 1:
-                audio = "no"
             query = {
                 "topic": topic,
                 "task": translation,
@@ -229,6 +227,23 @@ def reply(update: Update, context: CallbackContext):
                 ],
                 "created": str(datetime.date.today())
             }
+            if len(translation) == 1:
+                audio = "no"
+                query = {
+                    "topic": topic,
+                    "task": text,
+                    "original": translation,
+                    "modified_original": translation,
+                    "max_attempts": 2,
+                    "audio": audio,
+                    "lang": lang,
+                    "assigned_to": [
+                        context.chat_data['username']
+                    ],
+                    "completed_by": [
+                    ],
+                    "created": str(datetime.date.today())
+                }
 
             questions.insert_one(query)
             inserted += f"topic: {topic}\t {query.get('original')} - {query.get('task')}\tid: {query.get('_id')}\tlang: {lang}\n"
