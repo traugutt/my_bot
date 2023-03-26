@@ -48,6 +48,28 @@ def generate_hebrew_audio(text):
     return url
 
 
+def generate_german_audio(text):
+    url = 'https://api.narakeet.com/text-to-speech/mp3?voice=monika'
+
+    headers = {'x-api-key': 'Ha7pORFOiy2Z1hqL35AIb5A7qRB6erfvayGk6jWj', 'Content-Type': 'text/plain'}
+
+    text = text
+    encoded_text = text.encode('utf-8')
+
+    response = requests.post(url, headers=headers, data=encoded_text)
+    status_url = json.loads(response.text)['statusUrl']
+
+    succeeded = False
+    url = None
+    while not succeeded:
+        polling_url = requests.get(status_url).text
+        get_url = json.loads(polling_url).get('result', None)
+        if get_url:
+            succeeded = True
+            url = get_url
+
+    return url
+
 def apply_spaced_repetition(update):
     day = 1000 * 60 * 1440
     three_days = day * 3
@@ -204,6 +226,9 @@ def reply(update: Update, context: CallbackContext):
         elif audio and lang in ['he', 'iw']:
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
+        elif audio and lang in ['de']:
+            update.message.reply_text(task_line)
+            context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_german_audio(correct_answer))
         elif audio and 'http' in audio:
             update.message.reply_text(task_line)
             context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
@@ -269,7 +294,7 @@ def reply(update: Update, context: CallbackContext):
 
                 audio = True if question.get('audio', None) == "yes" else False
                 lang = question.get('lang', None)
-                if audio and lang in ['en', 'ko']:
+                if audio and lang in ['en', 'ko', 'de']:
                     lang = question['lang']
                     title = create_tts(correct_answer, lang)
                     path_to_file = 'bot_audio/' + title
