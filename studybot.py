@@ -148,6 +148,8 @@ def add_item(update, context):
         lang = detect(context.chat_data.get('text', "English"))
         if lang not in ['en', 'ko', 'he', 'iw', 'de']:
             lang = "en"
+        if username == "traugutt":
+            lang = "de"
         query = {
             "topic": "",
             "task": context.chat_data['translation'],
@@ -164,9 +166,32 @@ def add_item(update, context):
             "created": str(datetime.date.today())
         }
         questions.insert_one(query)
-        update.message.reply_text(f"Inserted {str(query)}")
+        update.message.reply_text(f"Inserted {str(query['original'])} - {str(query['modified_original'])}")
         context.chat_data['step'] = -1
         return
+
+
+def generate_audio(audio, lang, question, correct_answer, update, task_line, task_text, context):
+    if audio and lang in ['en', 'ko']:
+        lang = question['lang']
+        title = create_tts(correct_answer, lang)
+        path_to_file = 'bot_audio/' + title
+        update.message.reply_text(task_line)
+        context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+    elif audio and lang in ['he', 'iw']:
+        update.message.reply_text(task_line)
+        context.bot.send_audio(chat_id=update.effective_chat.id,
+                               audio=generate_hebrew_audio(correct_answer))
+    elif audio and lang in ['de']:
+        update.message.reply_text(task_line)
+        context.bot.send_audio(chat_id=update.effective_chat.id,
+                               audio=generate_german_audio(correct_answer))
+    elif audio and 'http' in audio:
+        update.message.reply_text(task_line)
+        context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
+    else:
+        update.message.reply_text(task_line)
+        update.message.reply_text(task_text)
 
 
 def reply(update: Update, context: CallbackContext):
@@ -214,27 +239,7 @@ def reply(update: Update, context: CallbackContext):
                                 })
         audio = True if question.get('audio', None) == "yes" else False
         lang = question.get('lang', None)
-        if audio and lang in ['en', 'ko']:
-            lang = question['lang']
-            directory = 'bot_audio/'
-            for f in os.listdir(directory):
-                os.remove(os.path.join(directory, f))
-            title = create_tts(correct_answer, lang)
-            path_to_file = 'bot_audio/' + title
-            update.message.reply_text(task_line)
-            context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
-        elif audio and lang in ['he', 'iw']:
-            update.message.reply_text(task_line)
-            context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_hebrew_audio(correct_answer))
-        elif audio and lang in ['de']:
-            update.message.reply_text(task_line)
-            context.bot.send_audio(chat_id=update.effective_chat.id, audio=generate_german_audio(correct_answer))
-        elif audio and 'http' in audio:
-            update.message.reply_text(task_line)
-            context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
-        else:
-            update.message.reply_text(task_line)
-            update.message.reply_text(task_text)
+        generate_audio(audio=audio, lang=lang, update=update, context=context, task_line=task_line, task_text=task_text, question=question, correct_answer=correct_answer)
     elif context.chat_data.get('step', None) in [0, 1]:
         add_item(update, context)
     else:
@@ -294,26 +299,8 @@ def reply(update: Update, context: CallbackContext):
 
                 audio = True if question.get('audio', None) == "yes" else False
                 lang = question.get('lang', None)
-                if audio and lang in ['en', 'ko', 'de']:
-                    lang = question['lang']
-                    title = create_tts(correct_answer, lang)
-                    path_to_file = 'bot_audio/' + title
-                    update.message.reply_text(task_line)
-                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
-                elif audio and lang in ['he', 'iw']:
-                    update.message.reply_text(task_line)
-                    context.bot.send_audio(chat_id=update.effective_chat.id,
-                                           audio=generate_hebrew_audio(correct_answer))
-                elif audio and lang in ['de']:
-                    update.message.reply_text(task_line)
-                    context.bot.send_audio(chat_id=update.effective_chat.id,
-                                           audio=generate_german_audio(correct_answer))
-                elif audio and 'http' in audio:
-                    update.message.reply_text(task_line)
-                    context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
-                else:
-                    update.message.reply_text(task_line)
-                    update.message.reply_text(task_text)
+                generate_audio(audio=audio, lang=lang, update=update, context=context, task_line=task_line,
+                               task_text=task_text, question=question, correct_answer=correct_answer)
         else:
             num_of_tries = answers.find_one({'question_id': element_id, 'username': username})['number_of_tries']
             max_attempts = 1
@@ -371,7 +358,7 @@ def main() -> None:
     updater.dispatcher.add_handler(CommandHandler('stop', stop))
     updater.dispatcher.add_handler(CommandHandler('today', today))
     updater.dispatcher.add_handler(CommandHandler('add', add))
-    updater.dispatcher.add_error_handler(start)
+    #updater.dispatcher.add_error_handler(start)
     updater.dispatcher.add_handler(MessageHandler(Filters.text, reply))
     updater.start_polling()
     updater.idle()
