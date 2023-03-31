@@ -146,7 +146,7 @@ def add_item(update, context):
     if context.chat_data.get('step', None) == 1:
         context.chat_data['translation'] = command
         lang = detect(context.chat_data.get('text', "English"))
-        if lang not in ['en', 'ko', 'he', 'iw']:
+        if lang not in ['en', 'ko', 'he', 'iw', 'de']:
             lang = "en"
         query = {
             "topic": "",
@@ -304,6 +304,10 @@ def reply(update: Update, context: CallbackContext):
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id,
                                            audio=generate_hebrew_audio(correct_answer))
+                elif audio and lang in ['de']:
+                    update.message.reply_text(task_line)
+                    context.bot.send_audio(chat_id=update.effective_chat.id,
+                                           audio=generate_german_audio(correct_answer))
                 elif audio and 'http' in audio:
                     update.message.reply_text(task_line)
                     context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)

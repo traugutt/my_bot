@@ -200,7 +200,7 @@ def reply(update: Update, context: CallbackContext):
         return
     if context.chat_data.get('batch_step', None) == 1:
         items = command.split('\n')
-        inserted = 'Inserted:\n'
+        inserted = 0
         for item in items:
             text = item.split(' $ ')[0].strip()
             translation = item.split(' $ ')[1].strip()
@@ -233,7 +233,7 @@ def reply(update: Update, context: CallbackContext):
                     "topic": topic,
                     "task": text,
                     "original": translation,
-                    "modified_original": translation,
+                    "modified_original": '',
                     "max_attempts": 2,
                     "audio": audio,
                     "lang": lang,
@@ -244,10 +244,9 @@ def reply(update: Update, context: CallbackContext):
                     ],
                     "created": str(datetime.date.today())
                 }
-
             questions.insert_one(query)
-            inserted += f"topic: {topic}\t {query.get('original')} - {query.get('task')}\tid: {query.get('_id')}\tlang: {lang}\n"
-        update.message.reply_text(inserted)
+            inserted += 1
+        update.message.reply_text(str(inserted))
         context.chat_data['batch_step'] = 0
         return
 
