@@ -79,7 +79,7 @@ def apply_spaced_repetition(update):
     two_months = twelve_days * 6
     three_months = two_months + month_ish
     intervals = [three_days, six_days, twelve_days, month_ish, two_months, three_months]
-    attempts_count = [3, 4, 5, 6, 7, 8]
+    attempts_count = [1, 2, 3, 4, 5, 6]
     username = update.message.chat.username
     answer_attempts = answers.find({'username': username})
     for attempt in answer_attempts:
