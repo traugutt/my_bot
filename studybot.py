@@ -269,8 +269,8 @@ async def reply(update: Update, context: CallbackContext):
         questions.delete_many({'_id': ObjectId(context.chat_data['current_question_id'])})
         answers.delete_many({'question_id': ObjectId(context.chat_data['current_question_id'])})
 
-        await update.callback_query.message.edit_text('Removed entry.')
-
+        await update.callback_query.message.edit_text('Removed entry. Press /start to continue.')
+        return
     if '’' in previous_answer:
         res = ''
         split_chars = list(previous_answer)
@@ -407,7 +407,7 @@ async def today(update: Update, context: CallbackContext):
         for entry in res:
             data += f"{counter}. {entry['original']} - {entry['modified_original']}\n"
             counter += 1
-        return await update.message.reply_text(data)
+        return await update.message.reply_text(data if data else "No words were added today 😌.")
     else:
         return await update.message.reply_text("No words were added today 😌.")
 
