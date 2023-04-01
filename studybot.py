@@ -264,13 +264,15 @@ async def reply(update: Update, context: CallbackContext):
     apply_spaced_repetition(update)
     username = update.effective_chat.username
     previous_answer = update.callback_query.data if not update.message else update.message.text
+    item_deleted = None
 
     if previous_answer == 'REMOVE':
         questions.delete_many({'_id': ObjectId(context.chat_data['current_question_id'])})
         answers.delete_many({'question_id': ObjectId(context.chat_data['current_question_id'])})
 
         await update.callback_query.message.edit_text('Removed entry. Press /start to continue.')
-        return
+        item_deleted = True
+
     if '’' in previous_answer:
         res = ''
         split_chars = list(previous_answer)
@@ -333,7 +335,7 @@ async def reply(update: Update, context: CallbackContext):
 
         is_correct = await check_answer(correct_previous, previous_answer)
 
-        if is_correct:
+        if is_correct or item_deleted:
             questions.update_one({'_id': element_id}, {'$push': {"completed_by": username}})
             question = questions.find_one({"assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
             answers.update_one(
@@ -342,8 +344,11 @@ async def reply(update: Update, context: CallbackContext):
             answers.update_one(
                 {'question_id': element_id, 'username': username},
                 {'$set': {'time': datetime.datetime.utcnow()}})
-            if not question:
+            if not question and update.message:
                 await update.message.reply_text('Congrats! You did all your homework! '
+                                          'Press /start to check for new homework at a later time.')
+            elif not question and not update.message:
+                await update.callback_query.message.edit_text('Congrats! You did all your homework! '
                                           'Press /start to check for new homework at a later time.')
             else:
 
