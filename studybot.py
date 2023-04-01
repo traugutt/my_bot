@@ -14,7 +14,7 @@ from bson.objectid import ObjectId
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, filters
-
+from bson import ObjectId
 from telegram import __version__ as TG_VER
 
 try:
@@ -213,6 +213,14 @@ async def add_item(update, context):
 
 
 async def generate_audio(audio, lang, question, correct_answer, update: Update, task_line, task_text, context):
+
+    keyboard_start_homework = [
+        [
+            InlineKeyboardButton("Remove entry", callback_data="REMOVE"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard_start_homework)
+
     if update.effective_user.username == "traugutt":
         lang = "de"
     if audio and lang in ['en', 'ko']:
@@ -220,35 +228,35 @@ async def generate_audio(audio, lang, question, correct_answer, update: Update, 
         title = create_tts(correct_answer, lang)
         path_to_file = 'bot_audio/' + title
         if not update.message:
-            await update.callback_query.message.edit_text(task_line)
+            await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
         else:
-            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_line, reply_markup=reply_markup)
         await context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
     elif audio and lang in ['he', 'iw']:
         if not update.message:
             await update.callback_query.message.edit_text(task_line)
         else:
-            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_line, reply_markup=reply_markup)
         await context.bot.send_audio(chat_id=update.effective_chat.id,
                                audio=generate_hebrew_audio(correct_answer))
     elif audio and lang in ['de']:
         if not update.message:
-            await update.callback_query.message.edit_text(task_line)
+            await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
         else:
-            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_line, reply_markup=reply_markup)
         await context.bot.send_audio(chat_id=update.effective_chat.id,
                                audio=generate_german_audio(correct_answer), title='play_me', filename='play_me')
     elif audio and 'http' in audio:
         if not update.message:
-            await update.callback_query.message.edit_text(task_line)
+            await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
         else:
-            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_line, reply_markup=reply_markup)
         await context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio, title='play_me')
     else:
         if not update.message:
-            await update.callback_query.message.edit_text(task_line)
+            await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
         else:
-            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_line, reply_markup=reply_markup)
             await update.message.reply_text(task_text)
 
 
@@ -256,6 +264,12 @@ async def reply(update: Update, context: CallbackContext):
     apply_spaced_repetition(update)
     username = update.effective_chat.username
     previous_answer = update.callback_query.data if not update.message else update.message.text
+
+    if previous_answer == 'REMOVE':
+        questions.delete_many({'_id': ObjectId(context.chat_data['current_question_id'])})
+        answers.delete_many({'question_id': ObjectId(context.chat_data['current_question_id'])})
+
+        await update.callback_query.message.edit_text('Removed entry.')
 
     if '’' in previous_answer:
         res = ''
@@ -269,7 +283,7 @@ async def reply(update: Update, context: CallbackContext):
     if previous_answer.lower() == 'y':
         question = questions.find_one({"assigned_to": {"$in": [username]},
                                        "completed_by": {"$nin": [username]}})
-
+        context.chat_data['current_question_id'] = question.get('_id')
         if not bool(question):
             await update.message.reply_text('There\'s no homework for you to do at the moment. '
                                       'Press /start to check for homework at a later time.')
