@@ -132,7 +132,7 @@ async def start(update: Update, context: CallbackContext):
         reply_markup = InlineKeyboardMarkup([])
     else:
         message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
-                             f'Ready to do your homework?'
+                             f'Ready to do your homework? Press /add to add terms.'
         reply_markup = InlineKeyboardMarkup(keyboard_start_homework)
 
     context.chat_data['step'] = -1
@@ -207,7 +207,7 @@ async def add_item(update, context):
             "created": str(datetime.date.today())
         }
         questions.insert_one(query)
-        await update.message.reply_text(f"Inserted:\n {str(query['original'])} - {str(query['modified_original'])}")
+        await update.message.reply_text(f"Inserted:\n {str(query['original'])} - {str(query['modified_original'])}\n Press /start to study or /add another term.")
         context.chat_data['step'] = -1
         return
 
@@ -245,7 +245,7 @@ async def generate_audio(audio, lang, question, correct_answer, update: Update, 
         else:
             await update.message.reply_text(task_line, reply_markup=reply_markup)
         await context.bot.send_audio(chat_id=update.effective_chat.id,
-                               audio=generate_german_audio(correct_answer), title='play_me', filename='play_me')
+                               audio=generate_german_audio(correct_answer), title='play_me', filename='play_me', thumbnail='play_me', thumb='play_me')
     elif audio and 'http' in audio:
         if not update.message:
             await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
