@@ -13,7 +13,7 @@ import os
 from bson.objectid import ObjectId
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, filters
 
 from telegram import __version__ as TG_VER
 
@@ -86,6 +86,7 @@ def generate_german_audio(text):
     return url
 
 def apply_spaced_repetition(update):
+    update = update
     day = 1000 * 60 * 1440
     three_days = day * 3
     six_days = three_days * 2
@@ -95,7 +96,7 @@ def apply_spaced_repetition(update):
     three_months = two_months + month_ish
     intervals = [three_days, six_days, twelve_days, month_ish, two_months, three_months]
     attempts_count = [1, 2, 3, 4, 5, 6]
-    username = update.message.chat.username
+    username = update.effective_chat.username
     answer_attempts = answers.find({'username': username})
     for attempt in answer_attempts:
         if attempt.get('number_of_times_answered', None) < 3:
@@ -115,38 +116,42 @@ def apply_spaced_repetition(update):
 
 async def start(update: Update, context: CallbackContext):
     apply_spaced_repetition(update)
-    username = update.message.chat.username
+    username = update.effective_chat.username
 
     total = questions.count_documents({"assigned_to": {"$in": [username]}, "completed_by": {"$nin": [username]}})
 
-    if not total:
-        message_reply_text = 'There\'s no homework for you to do at the moment. 😌 ' \
-                             'Press /start to check for homework at a later time.'
-    else:
-        message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
-                             f'Ready to do your homework? Type in "y" or "Y" to proceed. Use /add to add terms.'
-    context.chat_data['step'] = -1
-
-    keyboard = [
+    keyboard_start_homework = [
         [
-            InlineKeyboardButton("Homeworkkk ✏️", callback_data="/add"),
-            InlineKeyboardButton("Add terms ➕", callback_data="y"),
+            InlineKeyboardButton("Let's do it! 💪", callback_data="y"),
         ]
     ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    if not total:
+        message_reply_text = 'There\'s no homework for you to do at the moment. 😌 ' \
+                             'Press /start to check for homework at a later time. Press /add to add terms.'
+        reply_markup = InlineKeyboardMarkup([])
+    else:
+        message_reply_text = f'Welcome, you have {str(total)} questions left to answer. ' \
+                             f'Ready to do your homework?'
+        reply_markup = InlineKeyboardMarkup(keyboard_start_homework)
+
+    context.chat_data['step'] = -1
+
+
+
+
+
+
     await update.message.reply_text(message_reply_text, reply_markup = reply_markup)
 
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
-
+    await query.answer()
     # CallbackQueries need to be answered, even if no notification to the user is needed
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    await query.answer()
 
-    await query.edit_message_text(text=f'{query.data}')
 
 
 async def add(update: Update, context: CallbackContext):
@@ -174,7 +179,7 @@ def create_tts(text, lang):
 
 async def add_item(update, context):
     command = update.message.text
-    username = update.message.chat.username
+    username = update.effective_chat.username
     if context.chat_data.get('step', None) == 0:
         context.chat_data['text'] = command
         context.chat_data['step'] = 1
@@ -202,38 +207,55 @@ async def add_item(update, context):
             "created": str(datetime.date.today())
         }
         questions.insert_one(query)
-        await update.message.reply_text(f"Inserted {str(query['original'])} - {str(query['modified_original'])}")
+        await update.message.reply_text(f"Inserted:\n {str(query['original'])} - {str(query['modified_original'])}")
         context.chat_data['step'] = -1
         return
 
 
-async def generate_audio(audio, lang, question, correct_answer, update, task_line, task_text, context):
+async def generate_audio(audio, lang, question, correct_answer, update: Update, task_line, task_text, context):
+    if update.effective_user.username == "traugutt":
+        lang = "de"
     if audio and lang in ['en', 'ko']:
         lang = question['lang']
         title = create_tts(correct_answer, lang)
         path_to_file = 'bot_audio/' + title
-        await update.message.reply_text(task_line)
-        context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
+        if not update.message:
+            await update.callback_query.message.edit_text(task_line)
+        else:
+            await update.message.reply_text(task_line)
+        await context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
     elif audio and lang in ['he', 'iw']:
-        await update.message.reply_text(task_line)
-        context.bot.send_audio(chat_id=update.effective_chat.id,
+        if not update.message:
+            await update.callback_query.message.edit_text(task_line)
+        else:
+            await update.message.reply_text(task_line)
+        await context.bot.send_audio(chat_id=update.effective_chat.id,
                                audio=generate_hebrew_audio(correct_answer))
     elif audio and lang in ['de']:
-        await update.message.reply_text(task_line)
-        context.bot.send_audio(chat_id=update.effective_chat.id,
-                               audio=generate_german_audio(correct_answer))
+        if not update.message:
+            await update.callback_query.message.edit_text(task_line)
+        else:
+            await update.message.reply_text(task_line)
+        await context.bot.send_audio(chat_id=update.effective_chat.id,
+                               audio=generate_german_audio(correct_answer), title='play_me', filename='play_me')
     elif audio and 'http' in audio:
-        await update.message.reply_text(task_line)
-        context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio)
+        if not update.message:
+            await update.callback_query.message.edit_text(task_line)
+        else:
+            await update.message.reply_text(task_line)
+        await context.bot.send_audio(chat_id=update.effective_chat.id, audio=audio, title='play_me')
     else:
-        await update.message.reply_text(task_line)
-        await update.message.reply_text(task_text)
+        if not update.message:
+            await update.callback_query.message.edit_text(task_line)
+        else:
+            await update.message.reply_text(task_line)
+            await update.message.reply_text(task_text)
 
 
 async def reply(update: Update, context: CallbackContext):
-    #apply_spaced_repetition(update)
-    username = update.message.chat.username
-    previous_answer = update.message.text
+    apply_spaced_repetition(update)
+    username = update.effective_chat.username
+    previous_answer = update.callback_query.data if not update.message else update.message.text
 
     if '’' in previous_answer:
         res = ''
@@ -295,7 +317,7 @@ async def reply(update: Update, context: CallbackContext):
             previous_answer = previous_answer.lower()
             correct_previous = correct_previous.lower()
 
-        is_correct = check_answer(correct_previous, previous_answer)
+        is_correct = await check_answer(correct_previous, previous_answer)
 
         if is_correct:
             questions.update_one({'_id': element_id}, {'$push': {"completed_by": username}})
@@ -362,7 +384,7 @@ async def reply(update: Update, context: CallbackContext):
 
 
 async def today(update: Update, context: CallbackContext):
-    username = update.message.chat.username
+    username = update.effective_chat.username
     query = {'assigned_to': {"$in": [username]}, "created": str(datetime.date.today())}
     res = questions.find(query)
     data = ''
@@ -394,6 +416,8 @@ def main() -> None:
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('stop', stop))
     application.add_handler(CommandHandler('today', today))
+    application.add_handler(CallbackQueryHandler(reply))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply))
     application.add_handler(CommandHandler('add', add))
     #updater.dispatcher.add_error_handler(start)
     application.run_polling()
