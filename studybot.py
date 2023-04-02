@@ -429,7 +429,9 @@ async def stop(update: Update):
 def main() -> None:
     """Run the bot."""
     TOKEN = os.getenv('TELEGRAM_API_KEY')
+    TOKEN = "1896847698:AAFtp1t66yDx-z8-H2m2_d_lj2eC59Q0ay4"
     #updater = Updater("1896847698:AAFtp1t66yDx-z8-H2m2_d_lj2eC59Q0ay4", use_context=True)
+    #updater = Updater("6202623123:AAHhMemg9FZZOhK-lxlcw0RFPg0SsQiME2c", use_context=True)
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('help', help_command))
