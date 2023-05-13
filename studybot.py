@@ -189,8 +189,6 @@ async def add_item(update, context):
         lang = detect(context.chat_data.get('text', "English"))
         if lang not in ['en', 'ko', 'he', 'iw', 'de']:
             lang = "en"
-        if username == "traugutt":
-            lang = "de"
         query = {
             "topic": "",
             "task": context.chat_data['translation'],
