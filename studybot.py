@@ -40,6 +40,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 def generate_hebrew_audio(text):
     url = 'https://api.narakeet.com/text-to-speech/mp3?voice=lior'
 
@@ -219,8 +220,6 @@ async def generate_audio(audio, lang, question, correct_answer, update: Update, 
     ]
     reply_markup = InlineKeyboardMarkup(keyboard_start_homework)
 
-    if update.effective_user.username == "traugutt":
-        lang = "de"
     if audio and lang in ['en', 'ko']:
         lang = question['lang']
         title = create_tts(correct_answer, lang)
@@ -232,11 +231,13 @@ async def generate_audio(audio, lang, question, correct_answer, update: Update, 
         await context.bot.send_audio(chat_id=update.effective_chat.id, audio=open(path_to_file, 'rb'))
     elif audio and lang in ['he', 'iw']:
         if not update.message:
-            await update.callback_query.message.edit_text(task_line)
+            x = 3
+            await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
         else:
             await update.message.reply_text(task_line, reply_markup=reply_markup)
+        hebrew_audio = generate_hebrew_audio(correct_answer)
         await context.bot.send_audio(chat_id=update.effective_chat.id,
-                               audio=generate_hebrew_audio(correct_answer))
+                                   audio=hebrew_audio)
     elif audio and lang in ['de']:
         if not update.message:
             await update.callback_query.message.edit_text(task_line, reply_markup=reply_markup)
